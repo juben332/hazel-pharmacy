@@ -273,7 +273,7 @@
     const snap = await getDocs(collection(db, 'products'));
     products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     buildCategoryTabs();
-    renderProducts();
+    renderProducts(document.getElementById('product-search').value);
   }
 
   async function loadCustomers() {
@@ -313,16 +313,40 @@
       list = list.filter(p => p.name?.toLowerCase().includes(q) || p.barcode?.includes(q));
     }
     if (!list.length) { grid.innerHTML = '<div class="pos-empty">No products found</div>'; return; }
-    grid.innerHTML = list.map(p => `
-      <div class="pos-product-card" data-id="${p.id}">
-        <div class="pos-product-card__name">${p.name}</div>
-        <div class="pos-product-card__cat">${p.category || '—'}</div>
-        <div class="pos-product-card__price">${formatPeso(p.price)}</div>
-        <div class="pos-product-card__stock ${p.stock <= (p.lowStockThreshold || 10) ? 'low' : ''}">${p.stock} in stock</div>
-      </div>
-    `).join('');
+    grid.innerHTML = list.map(p => {
+      const cartItem = cart.find(x => x.id === p.id);
+      const inCart = !!cartItem;
+      return `
+        <div class="pos-product-card ${inCart ? 'pos-product-card--in-cart' : ''}" data-id="${p.id}">
+          ${inCart ? `<div class="pos-product-card__badge">${cartItem.qty}</div>` : ''}
+          <div class="pos-product-card__name">${p.name}</div>
+          <div class="pos-product-card__cat">${p.category || '—'}</div>
+          <div class="pos-product-card__price">${formatPeso(p.price)}</div>
+          <div class="pos-product-card__stock ${p.stock <= (p.lowStockThreshold || 10) ? 'low' : ''}">${p.stock} in stock</div>
+        </div>`;
+    }).join('');
     grid.querySelectorAll('.pos-product-card').forEach(card => {
       card.addEventListener('click', () => addToCart(card.dataset.id));
+    });
+  }
+
+  // Update just the card states without re-rendering the whole grid
+  function updateCardStates() {
+    document.querySelectorAll('.pos-product-card[data-id]').forEach(card => {
+      const cartItem = cart.find(x => x.id === card.dataset.id);
+      const inCart = !!cartItem;
+      card.classList.toggle('pos-product-card--in-cart', inCart);
+      let badge = card.querySelector('.pos-product-card__badge');
+      if (inCart) {
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.className = 'pos-product-card__badge';
+          card.prepend(badge);
+        }
+        badge.textContent = cartItem.qty;
+      } else if (badge) {
+        badge.remove();
+      }
     });
   }
 
@@ -334,43 +358,72 @@
     if (!p) return;
     const existing = cart.find(x => x.id === productId);
     if (existing) {
-      if (existing.qty >= p.stock) { showToast(`Only ${p.stock} units available`, 'warning'); return; }
+      if (existing.qty >= p.stock) { showToast(`Only ${p.stock} in stock`, 'warning'); return; }
       existing.qty++;
     } else {
       cart.push({ id: p.id, name: p.name, price: p.price, qty: 1, stock: p.stock, requiresPrescription: p.requiresPrescription });
     }
     renderCart();
+    updateCardStates();
   }
 
   function renderCart() {
     const el = document.getElementById('cart-items');
-    if (!cart.length) { el.innerHTML = '<div class="pos-cart__empty">Cart is empty</div>'; updateTotals(); return; }
+    if (!cart.length) {
+      el.innerHTML = `
+        <div class="pos-cart__empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.98-1.69l1.57-8.31H6"/></svg>
+          Tap a product to add it
+        </div>`;
+      updateTotals();
+      return;
+    }
     el.innerHTML = cart.map((item, i) => `
       <div class="pos-cart-item">
-        <div class="pos-cart-item__info">
-          <span class="pos-cart-item__name">${item.name}${item.requiresPrescription ? ' <span class="badge badge--blue">Rx</span>' : ''}</span>
-          <span class="pos-cart-item__price">${formatPeso(item.price)}</span>
-        </div>
-        <div class="pos-cart-item__controls">
-          <button class="qty-btn" onclick="adjustQty(${i}, -1)">−</button>
-          <span class="qty-value">${item.qty}</span>
-          <button class="qty-btn" onclick="adjustQty(${i}, 1)">+</button>
-          <button class="remove-btn" onclick="removeItem(${i})">✕</button>
+        <div class="pos-cart-item__name">
+          ${item.name}${item.requiresPrescription ? ' <span class="badge badge--blue" style="font-size:0.6rem;padding:1px 6px;">Rx</span>' : ''}
         </div>
         <div class="pos-cart-item__subtotal">${formatPeso(item.price * item.qty)}</div>
+        <div class="pos-cart-item__row2">
+          <span class="pos-cart-item__unit">${formatPeso(item.price)} each</span>
+          <button class="qty-btn qty-btn--remove" onclick="adjustQty(${i}, -1)" title="Decrease / Remove">−</button>
+          <span class="qty-value">${item.qty}</span>
+          <button class="qty-btn" onclick="adjustQty(${i}, 1)" title="Increase">+</button>
+          <button class="remove-btn" onclick="removeItem(${i})" title="Remove item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
       </div>
     `).join('');
     updateTotals();
   }
 
   window.adjustQty = (i, delta) => {
-    cart[i].qty = Math.max(1, cart[i].qty + delta);
-    if (cart[i].qty > cart[i].stock) { cart[i].qty = cart[i].stock; showToast('Max stock reached', 'warning'); }
+    const newQty = cart[i].qty + delta;
+    if (newQty <= 0) {
+      // Pressing − at qty 1 removes the item (unselects)
+      cart.splice(i, 1);
+      renderCart();
+      updateCardStates();
+      return;
+    }
+    if (newQty > cart[i].stock) { showToast(`Only ${cart[i].stock} in stock`, 'warning'); return; }
+    cart[i].qty = newQty;
     renderCart();
+    updateCardStates();
   };
-  window.removeItem = i => { cart.splice(i, 1); renderCart(); };
 
-  document.getElementById('clear-cart-btn').addEventListener('click', () => { cart = []; renderCart(); });
+  window.removeItem = i => {
+    cart.splice(i, 1);
+    renderCart();
+    updateCardStates();
+  };
+
+  document.getElementById('clear-cart-btn').addEventListener('click', () => {
+    cart = [];
+    renderCart();
+    updateCardStates();
+  });
 
   // ── Totals ─────────────────────────────────────────────────────────────────
   function updateTotals() {
@@ -496,6 +549,7 @@
 
       showReceipt({ id: txRef.id, ...txData });
       cart = [];
+      renderCart();
       await loadProducts();
     } catch (err) {
       console.error(err);
