@@ -10,6 +10,9 @@
 </head>
 <body>
 
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar__logo">
@@ -59,9 +62,20 @@
       </div>
     </div>
 
+    <!-- Cart overlay + FAB (mobile) -->
+    <div class="pos-cart-overlay" id="cart-overlay"></div>
+    <button class="pos-cart-fab" id="cart-fab" aria-label="View cart">
+      <span class="pos-cart-fab__label">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 001.98-1.69l1.57-8.31H6"/></svg>
+        View Cart <span class="pos-cart-fab__count" id="fab-count">0 items</span>
+      </span>
+      <span class="pos-cart-fab__total" id="fab-total">₱0.00</span>
+    </button>
+
     <!-- RIGHT: Cart + Payment -->
-    <div class="pos-right">
+    <div class="pos-right" id="cart-panel">
       <div class="pos-cart">
+        <div class="pos-cart__handle"><div class="pos-cart__handle-bar"></div></div>
         <div class="pos-cart__header">
           <h3>Current Order</h3>
           <button class="btn btn--ghost btn--sm" id="clear-cart-btn">Clear</button>
@@ -166,9 +180,35 @@
   });
 
   document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+
+  // Sidebar drawer (mobile)
+  const sidebarEl = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
   document.getElementById('menu-toggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('sidebar--open');
+    const open = sidebarEl.classList.toggle('sidebar--open');
+    sidebarOverlay.classList.toggle('sidebar-overlay--show', open);
   });
+  sidebarOverlay.addEventListener('click', () => {
+    sidebarEl.classList.remove('sidebar--open');
+    sidebarOverlay.classList.remove('sidebar-overlay--show');
+  });
+
+  // Cart drawer (mobile)
+  const cartPanel = document.getElementById('cart-panel');
+  const cartOverlay = document.getElementById('cart-overlay');
+  const cartFab = document.getElementById('cart-fab');
+  function openCart() {
+    cartPanel.classList.add('cart-open');
+    cartOverlay.classList.add('pos-cart-overlay--show');
+  }
+  function closeCart() {
+    cartPanel.classList.remove('cart-open');
+    cartOverlay.classList.remove('pos-cart-overlay--show');
+  }
+  cartFab.addEventListener('click', openCart);
+  cartOverlay.addEventListener('click', closeCart);
+  // Close cart when checkout button tapped (receipt will appear)
+  document.getElementById('checkout-btn').addEventListener('click', closeCart, { capture: false });
 
   // ── Load Products ──────────────────────────────────────────────────────────
   async function loadProducts() {
@@ -283,6 +323,11 @@
     document.getElementById('subtotal').textContent = formatPeso(subtotal);
     document.getElementById('discount-amount').textContent = formatPeso(discountAmt);
     document.getElementById('grand-total').textContent = formatPeso(total);
+
+    // Update FAB
+    const totalQty = cart.reduce((sum, x) => sum + x.qty, 0);
+    document.getElementById('fab-count').textContent = totalQty === 1 ? '1 item' : `${totalQty} items`;
+    document.getElementById('fab-total').textContent = formatPeso(total);
 
     updateChange(total);
     document.getElementById('checkout-btn').disabled = cart.length === 0 || total <= 0;
