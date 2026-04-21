@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hazel Pharmacy — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__logo">
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#1d4ed8"/><path d="M13 20h14M20 13v14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <span>Hazel Admin</span>
+  </div>
+  <nav class="sidebar__nav">
+    <a href="/admin/index.html" class="sidebar__link sidebar__link--active">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="/pos.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      POS / Cashier
+    </a>
+    <a href="/admin/inventory.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Inventory
+    </a>
+    <a href="/admin/prescriptions.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Prescriptions
+    </a>
+    <a href="/admin/customers.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Customers
+    </a>
+    <a href="/admin/reports.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </a>
+    <a href="/admin/staff.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/></svg>
+      Staff
+    </a>
+  </nav>
+  <div class="sidebar__bottom">
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-avatar">A</div>
+      <div>
+        <p class="sidebar__uname" id="topbar-name">—</p>
+        <p class="sidebar__urole" id="topbar-role">Administrator</p>
+      </div>
+    </div>
+    <button class="sidebar__signout" id="sign-out-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header class="topbar">
+    <button class="topbar__menu" id="menu-toggle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h2 class="topbar__title">Dashboard</h2>
+    <span class="topbar__date" id="topbar-date"></span>
+  </header>
+
+  <div class="page-body">
+    <!-- Stat Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <div>
+          <p class="stat-card__label">Today's Sales</p>
+          <p class="stat-card__value" id="stat-sales">₱0.00</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div>
+          <p class="stat-card__label">Transactions Today</p>
+          <p class="stat-card__value" id="stat-txns">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--yellow">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        </div>
+        <div>
+          <p class="stat-card__label">Low Stock Items</p>
+          <p class="stat-card__value" id="stat-lowstock">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--purple">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <p class="stat-card__label">Total Customers</p>
+          <p class="stat-card__value" id="stat-customers">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts + Recent -->
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="card__header"><h3>Weekly Sales</h3></div>
+        <div class="card__body"><canvas id="sales-chart" height="200"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card__header"><h3>Low Stock Alerts</h3></div>
+        <div class="card__body">
+          <div id="low-stock-list"><p class="text-muted">Loading…</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+      <div class="card__header">
+        <h3>Recent Transactions</h3>
+        <a href="/admin/reports.html" class="btn btn--ghost btn--sm">View All</a>
+      </div>
+      <div class="card__body table-responsive">
+        <table class="table" id="recent-txn-table">
+          <thead><tr><th>Txn #</th><th>Cashier</th><th>Items</th><th>Total</th><th>Payment</th><th>Time</th></tr></thead>
+          <tbody id="recent-txn-body"><tr><td colspan="6" class="text-center text-muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script type="module">
+  import { db } from '/js/firebase-config.js';
+  import { requireAdmin, handleSignOut, showToast, formatPeso, formatDate, populateTopbar } from '/js/main.js';
+  import { collection, getDocs, query, where, orderBy, limit, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  requireAdmin(async user => {
+    populateTopbar(user);
+    document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();
+    document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    await Promise.all([loadStats(), loadRecentTxns(), buildWeeklyChart(), loadLowStock()]);
+  });
+
+  document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+  document.getElementById('menu-toggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('sidebar--open'));
+
+  async function loadStats() {
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const [txSnap, prodSnap, custSnap] = await Promise.all([
+      getDocs(query(collection(db, 'transactions'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), where('status','==','completed'))),
+      getDocs(collection(db, 'products')),
+      getDocs(collection(db, 'customers')),
+    ]);
+
+    const txns = txSnap.docs.map(d => d.data());
+    const products = prodSnap.docs.map(d => d.data());
+    const todaySales = txns.reduce((s, t) => s + (t.total || 0), 0);
+    const lowStock = products.filter(p => p.stock <= (p.lowStockThreshold || 10)).length;
+
+    document.getElementById('stat-sales').textContent = formatPeso(todaySales);
+    document.getElementById('stat-txns').textContent = txns.length;
+    document.getElementById('stat-lowstock').textContent = lowStock;
+    document.getElementById('stat-customers').textContent = custSnap.size;
+  }
+
+  async function loadRecentTxns() {
+    const snap = await getDocs(query(collection(db, 'transactions'), orderBy('createdAt', 'desc'), limit(10)));
+    const tbody = document.getElementById('recent-txn-body');
+    if (snap.empty) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No transactions yet</td></tr>'; return; }
+    tbody.innerHTML = snap.docs.map(d => {
+      const t = d.data();
+      return `<tr>
+        <td><span class="font-mono text-sm">${d.id.slice(-8).toUpperCase()}</span></td>
+        <td>${t.cashierName || '—'}</td>
+        <td>${t.items?.length || 0} items</td>
+        <td class="font-bold">${formatPeso(t.total)}</td>
+        <td><span class="badge badge--blue">${t.paymentMethod || '—'}</span></td>
+        <td class="text-muted text-sm">${formatDate(t.createdAt)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function buildWeeklyChart() {
+    const labels = [], data = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
+      const next = new Date(d); next.setDate(next.getDate() + 1);
+      const snap = await getDocs(query(collection(db, 'transactions'),
+        where('createdAt', '>=', Timestamp.fromDate(d)),
+        where('createdAt', '<', Timestamp.fromDate(next)),
+        where('status', '==', 'completed')
+      ));
+      const total = snap.docs.reduce((s, doc) => s + (doc.data().total || 0), 0);
+      labels.push(d.toLocaleDateString('en-PH', { month:'short', day:'numeric' }));
+      data.push(total);
+    }
+    new Chart(document.getElementById('sales-chart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ label: 'Sales (₱)', data, backgroundColor: '#1d4ed8', borderRadius: 6 }],
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+    });
+  }
+
+  async function loadLowStock() {
+    const snap = await getDocs(collection(db, 'products'));
+    const low = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.stock <= (p.lowStockThreshold || 10));
+    const el = document.getElementById('low-stock-list');
+    if (!low.length) { el.innerHTML = '<p class="text-muted">All stocks are sufficient ✓</p>'; return; }
+    el.innerHTML = low.map(p => `
+      <div class="low-stock-item">
+        <span>${p.name}</span>
+        <span class="badge badge--red">${p.stock} left</span>
+      </div>
+    `).join('');
+  }
+</script>
+</body>
+</html>

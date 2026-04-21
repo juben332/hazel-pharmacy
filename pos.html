@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hazel Pharmacy — POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__logo">
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#1d4ed8"/><path d="M13 20h14M20 13v14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <span>Hazel</span>
+  </div>
+  <nav class="sidebar__nav">
+    <a href="/pos.html" class="sidebar__link sidebar__link--active">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      POS / Cashier
+    </a>
+  </nav>
+  <div class="sidebar__bottom">
+    <div class="sidebar__user" id="sidebar-user">
+      <div class="sidebar__avatar" id="sidebar-avatar">C</div>
+      <div>
+        <p class="sidebar__uname" id="topbar-name">—</p>
+        <p class="sidebar__urole" id="topbar-role">Cashier</p>
+      </div>
+    </div>
+    <button class="sidebar__signout" id="sign-out-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main-content">
+  <header class="topbar">
+    <button class="topbar__menu" id="menu-toggle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h2 class="topbar__title">Point of Sale</h2>
+    <span class="topbar__date" id="topbar-date"></span>
+  </header>
+
+  <div class="pos-layout">
+    <!-- LEFT: Product Search + Grid -->
+    <div class="pos-left">
+      <div class="pos-search-bar">
+        <input class="form-control" type="text" id="product-search" placeholder="Search product by name or barcode…" />
+        <div class="pos-category-tabs" id="category-tabs"></div>
+      </div>
+      <div class="pos-product-grid" id="product-grid">
+        <div class="pos-empty">Loading products…</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Cart + Payment -->
+    <div class="pos-right">
+      <div class="pos-cart">
+        <div class="pos-cart__header">
+          <h3>Current Order</h3>
+          <button class="btn btn--ghost btn--sm" id="clear-cart-btn">Clear</button>
+        </div>
+
+        <div class="pos-cart__customer">
+          <select class="form-control form-control--sm" id="customer-select">
+            <option value="">Walk-in Customer</option>
+          </select>
+          <input class="form-control form-control--sm" type="text" id="prescription-ref" placeholder="Rx # (optional)" />
+        </div>
+
+        <div class="pos-cart__items" id="cart-items">
+          <div class="pos-cart__empty">Cart is empty</div>
+        </div>
+
+        <div class="pos-cart__totals">
+          <div class="pos-totals-row"><span>Subtotal</span><span id="subtotal">₱0.00</span></div>
+          <div class="pos-totals-row">
+            <span>Discount</span>
+            <div class="pos-discount-input">
+              <select id="discount-type" class="form-control form-control--sm">
+                <option value="none">None</option>
+                <option value="senior">Senior / PWD (20%)</option>
+                <option value="percent">Custom %</option>
+                <option value="amount">Fixed ₱</option>
+              </select>
+              <input type="number" id="discount-value" class="form-control form-control--sm" placeholder="0" min="0" style="display:none" />
+            </div>
+          </div>
+          <div class="pos-totals-row"><span>Discount Amount</span><span id="discount-amount">₱0.00</span></div>
+          <div class="pos-totals-row pos-totals-row--total"><span>TOTAL</span><span id="grand-total">₱0.00</span></div>
+        </div>
+
+        <div class="pos-payment">
+          <label class="form-label">Payment Method</label>
+          <div class="pos-payment-methods">
+            <button class="pos-pay-btn pos-pay-btn--active" data-method="cash">Cash</button>
+            <button class="pos-pay-btn" data-method="gcash">GCash</button>
+            <button class="pos-pay-btn" data-method="card">Card</button>
+            <button class="pos-pay-btn" data-method="insurance">Insurance</button>
+          </div>
+
+          <div id="cash-section">
+            <label class="form-label">Amount Tendered</label>
+            <input class="form-control form-control--lg" type="number" id="cash-tendered" placeholder="0.00" min="0" step="0.01" />
+            <div class="pos-quick-cash" id="quick-cash"></div>
+            <div class="pos-totals-row"><span>Change</span><span id="change-due" class="pos-change">₱0.00</span></div>
+          </div>
+        </div>
+
+        <button class="btn btn--primary btn--full btn--lg" id="checkout-btn" disabled>
+          Process Payment
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal" id="receipt-modal">
+  <div class="modal__overlay" onclick="closeReceiptModal()"></div>
+  <div class="modal__box modal__box--sm">
+    <div class="receipt" id="receipt-content"></div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" onclick="window.print()">Print Receipt</button>
+      <button class="btn btn--primary" onclick="closeReceiptModal()">New Transaction</button>
+    </div>
+  </div>
+</div>
+
+<!-- Low Stock Alert Banner -->
+<div class="low-stock-banner" id="low-stock-banner" hidden>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <span id="low-stock-msg"></span>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script type="module">
+  import { auth, db, isAdmin } from '/js/firebase-config.js';
+  import { requireAuth, handleSignOut, showToast, formatPeso, formatDate, logActivity, populateTopbar } from '/js/main.js';
+  import {
+    collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, limit, serverTimestamp
+  } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  let currentUser = null;
+  let products = [];
+  let customers = [];
+  let cart = [];
+  let paymentMethod = 'cash';
+  let filteredCategory = 'all';
+
+  requireAuth(async user => {
+    currentUser = user;
+    populateTopbar(user);
+    setAvatar(user);
+    await Promise.all([loadProducts(), loadCustomers()]);
+    setTopbarDate();
+    setupQuickCash();
+    checkLowStock();
+  });
+
+  document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('sidebar--open');
+  });
+
+  // ── Load Products ──────────────────────────────────────────────────────────
+  async function loadProducts() {
+    const snap = await getDocs(collection(db, 'products'));
+    products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    buildCategoryTabs();
+    renderProducts();
+  }
+
+  async function loadCustomers() {
+    const snap = await getDocs(collection(db, 'customers'));
+    customers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const sel = document.getElementById('customer-select');
+    customers.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id;
+      o.textContent = `${c.name} — ${c.phone || ''}`;
+      sel.appendChild(o);
+    });
+  }
+
+  function buildCategoryTabs() {
+    const cats = ['all', ...new Set(products.map(p => p.category).filter(Boolean))];
+    const tabs = document.getElementById('category-tabs');
+    tabs.innerHTML = cats.map(c =>
+      `<button class="pos-cat-tab ${c === 'all' ? 'pos-cat-tab--active' : ''}" data-cat="${c}">${c === 'all' ? 'All' : c}</button>`
+    ).join('');
+    tabs.querySelectorAll('.pos-cat-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.querySelectorAll('.pos-cat-tab').forEach(b => b.classList.remove('pos-cat-tab--active'));
+        btn.classList.add('pos-cat-tab--active');
+        filteredCategory = btn.dataset.cat;
+        renderProducts();
+      });
+    });
+  }
+
+  function renderProducts(search = '') {
+    const grid = document.getElementById('product-grid');
+    let list = products.filter(p => p.stock > 0);
+    if (filteredCategory !== 'all') list = list.filter(p => p.category === filteredCategory);
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(p => p.name?.toLowerCase().includes(q) || p.barcode?.includes(q));
+    }
+    if (!list.length) { grid.innerHTML = '<div class="pos-empty">No products found</div>'; return; }
+    grid.innerHTML = list.map(p => `
+      <div class="pos-product-card" data-id="${p.id}">
+        <div class="pos-product-card__name">${p.name}</div>
+        <div class="pos-product-card__cat">${p.category || '—'}</div>
+        <div class="pos-product-card__price">${formatPeso(p.price)}</div>
+        <div class="pos-product-card__stock ${p.stock <= (p.lowStockThreshold || 10) ? 'low' : ''}">${p.stock} in stock</div>
+      </div>
+    `).join('');
+    grid.querySelectorAll('.pos-product-card').forEach(card => {
+      card.addEventListener('click', () => addToCart(card.dataset.id));
+    });
+  }
+
+  document.getElementById('product-search').addEventListener('input', e => renderProducts(e.target.value));
+
+  // ── Cart ───────────────────────────────────────────────────────────────────
+  function addToCart(productId) {
+    const p = products.find(x => x.id === productId);
+    if (!p) return;
+    const existing = cart.find(x => x.id === productId);
+    if (existing) {
+      if (existing.qty >= p.stock) { showToast(`Only ${p.stock} units available`, 'warning'); return; }
+      existing.qty++;
+    } else {
+      cart.push({ id: p.id, name: p.name, price: p.price, qty: 1, stock: p.stock, requiresPrescription: p.requiresPrescription });
+    }
+    renderCart();
+  }
+
+  function renderCart() {
+    const el = document.getElementById('cart-items');
+    if (!cart.length) { el.innerHTML = '<div class="pos-cart__empty">Cart is empty</div>'; updateTotals(); return; }
+    el.innerHTML = cart.map((item, i) => `
+      <div class="pos-cart-item">
+        <div class="pos-cart-item__info">
+          <span class="pos-cart-item__name">${item.name}${item.requiresPrescription ? ' <span class="badge badge--blue">Rx</span>' : ''}</span>
+          <span class="pos-cart-item__price">${formatPeso(item.price)}</span>
+        </div>
+        <div class="pos-cart-item__controls">
+          <button class="qty-btn" onclick="adjustQty(${i}, -1)">−</button>
+          <span class="qty-value">${item.qty}</span>
+          <button class="qty-btn" onclick="adjustQty(${i}, 1)">+</button>
+          <button class="remove-btn" onclick="removeItem(${i})">✕</button>
+        </div>
+        <div class="pos-cart-item__subtotal">${formatPeso(item.price * item.qty)}</div>
+      </div>
+    `).join('');
+    updateTotals();
+  }
+
+  window.adjustQty = (i, delta) => {
+    cart[i].qty = Math.max(1, cart[i].qty + delta);
+    if (cart[i].qty > cart[i].stock) { cart[i].qty = cart[i].stock; showToast('Max stock reached', 'warning'); }
+    renderCart();
+  };
+  window.removeItem = i => { cart.splice(i, 1); renderCart(); };
+
+  document.getElementById('clear-cart-btn').addEventListener('click', () => { cart = []; renderCart(); });
+
+  // ── Totals ─────────────────────────────────────────────────────────────────
+  function updateTotals() {
+    const subtotal = cart.reduce((sum, x) => sum + x.price * x.qty, 0);
+    const discountAmt = calcDiscount(subtotal);
+    const total = Math.max(0, subtotal - discountAmt);
+
+    document.getElementById('subtotal').textContent = formatPeso(subtotal);
+    document.getElementById('discount-amount').textContent = formatPeso(discountAmt);
+    document.getElementById('grand-total').textContent = formatPeso(total);
+
+    updateChange(total);
+    document.getElementById('checkout-btn').disabled = cart.length === 0 || total <= 0;
+  }
+
+  function calcDiscount(subtotal) {
+    const type = document.getElementById('discount-type').value;
+    const val  = parseFloat(document.getElementById('discount-value').value) || 0;
+    if (type === 'senior') return subtotal * 0.20;
+    if (type === 'percent') return subtotal * (Math.min(val, 100) / 100);
+    if (type === 'amount')  return Math.min(val, subtotal);
+    return 0;
+  }
+
+  document.getElementById('discount-type').addEventListener('change', e => {
+    const dv = document.getElementById('discount-value');
+    dv.style.display = e.target.value === 'none' || e.target.value === 'senior' ? 'none' : 'block';
+    updateTotals();
+  });
+  document.getElementById('discount-value').addEventListener('input', updateTotals);
+
+  // ── Payment ────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.pos-pay-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pos-pay-btn').forEach(b => b.classList.remove('pos-pay-btn--active'));
+      btn.classList.add('pos-pay-btn--active');
+      paymentMethod = btn.dataset.method;
+      document.getElementById('cash-section').style.display = paymentMethod === 'cash' ? 'block' : 'none';
+    });
+  });
+
+  function updateChange(total) {
+    const tendered = parseFloat(document.getElementById('cash-tendered').value) || 0;
+    const change = tendered - total;
+    const el = document.getElementById('change-due');
+    el.textContent = formatPeso(Math.max(0, change));
+    el.classList.toggle('pos-change--negative', change < 0 && paymentMethod === 'cash');
+  }
+
+  document.getElementById('cash-tendered').addEventListener('input', () => {
+    const total = parseFloat(document.getElementById('grand-total').textContent.replace(/[^0-9.]/g, '')) || 0;
+    updateChange(total);
+  });
+
+  function setupQuickCash() {
+    const amounts = [100, 200, 500, 1000];
+    const el = document.getElementById('quick-cash');
+    el.innerHTML = amounts.map(a => `<button class="btn btn--outline btn--sm pos-quick-btn" data-amt="${a}">₱${a}</button>`).join('');
+    el.querySelectorAll('.pos-quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('cash-tendered').value = btn.dataset.amt;
+        document.getElementById('cash-tendered').dispatchEvent(new Event('input'));
+      });
+    });
+  }
+
+  // ── Checkout ───────────────────────────────────────────────────────────────
+  document.getElementById('checkout-btn').addEventListener('click', processPayment);
+
+  async function processPayment() {
+    const totalText = document.getElementById('grand-total').textContent;
+    const total = parseFloat(totalText.replace(/[^0-9.]/g, '')) || 0;
+    const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace(/[^0-9.]/g, '')) || 0;
+    const discountAmt = parseFloat(document.getElementById('discount-amount').textContent.replace(/[^0-9.]/g, '')) || 0;
+    const tendered = parseFloat(document.getElementById('cash-tendered').value) || 0;
+    const discountType = document.getElementById('discount-type').value;
+    const customerId = document.getElementById('customer-select').value;
+    const prescriptionRef = document.getElementById('prescription-ref').value.trim();
+
+    if (paymentMethod === 'cash' && tendered < total) {
+      showToast('Insufficient cash tendered', 'error'); return;
+    }
+
+    const hasPrescriptionItem = cart.some(x => x.requiresPrescription);
+    if (hasPrescriptionItem && !prescriptionRef) {
+      showToast('Prescription reference required for Rx items', 'warning'); return;
+    }
+
+    const btn = document.getElementById('checkout-btn');
+    btn.disabled = true;
+    btn.textContent = 'Processing…';
+
+    try {
+      const txData = {
+        items: cart.map(x => ({ id: x.id, name: x.name, price: x.price, qty: x.qty })),
+        subtotal, discountType, discountAmount: discountAmt, total,
+        paymentMethod,
+        cashTendered: paymentMethod === 'cash' ? tendered : null,
+        changeDue: paymentMethod === 'cash' ? Math.max(0, tendered - total) : null,
+        customerId: customerId || null,
+        prescriptionRef: prescriptionRef || null,
+        cashierId: currentUser.uid,
+        cashierName: currentUser.displayName || currentUser.email,
+        createdAt: serverTimestamp(),
+        status: 'completed',
+      };
+
+      const txRef = await addDoc(collection(db, 'transactions'), txData);
+
+      // Deduct stock
+      await Promise.all(cart.map(item =>
+        updateDoc(doc(db, 'products', item.id), {
+          stock: (products.find(p => p.id === item.id)?.stock || 0) - item.qty
+        })
+      ));
+
+      await logActivity(currentUser, 'transaction_completed', { txId: txRef.id, total });
+
+      showReceipt({ id: txRef.id, ...txData });
+      cart = [];
+      await loadProducts();
+    } catch (err) {
+      console.error(err);
+      showToast('Transaction failed: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Process Payment';
+    }
+  }
+
+  // ── Receipt ────────────────────────────────────────────────────────────────
+  function showReceipt(tx) {
+    const el = document.getElementById('receipt-content');
+    el.innerHTML = `
+      <div class="receipt__header">
+        <strong>Hazel Pharmacy</strong>
+        <p>Official Receipt</p>
+        <small>${new Date().toLocaleString('en-PH')}</small>
+      </div>
+      <div class="receipt__id">Txn #${tx.id.slice(-8).toUpperCase()}</div>
+      <table class="receipt__items">
+        ${tx.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${formatPeso(i.price * i.qty)}</td></tr>`).join('')}
+      </table>
+      <div class="receipt__divider"></div>
+      <div class="receipt__row"><span>Subtotal</span><span>${formatPeso(tx.subtotal)}</span></div>
+      ${tx.discountAmount > 0 ? `<div class="receipt__row"><span>Discount</span><span>-${formatPeso(tx.discountAmount)}</span></div>` : ''}
+      <div class="receipt__row receipt__row--total"><span>TOTAL</span><span>${formatPeso(tx.total)}</span></div>
+      ${tx.paymentMethod === 'cash' ? `
+        <div class="receipt__row"><span>Cash</span><span>${formatPeso(tx.cashTendered)}</span></div>
+        <div class="receipt__row"><span>Change</span><span>${formatPeso(tx.changeDue)}</span></div>` : ''}
+      <div class="receipt__payment">Payment: ${tx.paymentMethod.toUpperCase()}</div>
+      <div class="receipt__footer">Thank you for your purchase!<br/>Cashier: ${tx.cashierName}</div>
+    `;
+    document.getElementById('receipt-modal').classList.add('modal--open');
+    renderCart();
+    document.getElementById('discount-type').value = 'none';
+    document.getElementById('discount-value').style.display = 'none';
+    document.getElementById('cash-tendered').value = '';
+    document.getElementById('prescription-ref').value = '';
+    updateTotals();
+  }
+
+  window.closeReceiptModal = () => {
+    document.getElementById('receipt-modal').classList.remove('modal--open');
+  };
+
+  // ── Low Stock Alert ────────────────────────────────────────────────────────
+  async function checkLowStock() {
+    const lowItems = products.filter(p => p.stock <= (p.lowStockThreshold || 10) && p.stock > 0);
+    if (lowItems.length) {
+      const banner = document.getElementById('low-stock-banner');
+      document.getElementById('low-stock-msg').textContent = `⚠ Low stock: ${lowItems.map(p => p.name).join(', ')}`;
+      banner.hidden = false;
+    }
+  }
+
+  function setTopbarDate() {
+    document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function setAvatar(user) {
+    const a = document.getElementById('sidebar-avatar');
+    if (a) a.textContent = (user.displayName?.[0] || user.email?.[0] || 'C').toUpperCase();
+  }
+</script>
+</body>
+</html>

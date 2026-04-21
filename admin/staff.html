@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hazel Pharmacy — Staff</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__logo">
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#1d4ed8"/><path d="M13 20h14M20 13v14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <span>Hazel Admin</span>
+  </div>
+  <nav class="sidebar__nav">
+    <a href="/admin/index.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="/pos.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      POS / Cashier
+    </a>
+    <a href="/admin/inventory.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Inventory
+    </a>
+    <a href="/admin/prescriptions.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Prescriptions
+    </a>
+    <a href="/admin/customers.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Customers
+    </a>
+    <a href="/admin/reports.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </a>
+    <a href="/admin/staff.html" class="sidebar__link sidebar__link--active">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/></svg>
+      Staff
+    </a>
+  </nav>
+  <div class="sidebar__bottom">
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-avatar">A</div>
+      <div>
+        <p class="sidebar__uname" id="topbar-name">—</p>
+        <p class="sidebar__urole" id="topbar-role">Administrator</p>
+      </div>
+    </div>
+    <button class="sidebar__signout" id="sign-out-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header class="topbar">
+    <button class="topbar__menu" id="menu-toggle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h2 class="topbar__title">Staff Management</h2>
+    <button class="btn btn--primary" id="add-staff-btn">+ Add Staff</button>
+  </header>
+
+  <div class="page-body">
+    <div class="info-banner">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Staff accounts must be created in <strong>Firebase Authentication</strong> first. Use this section to store their profile and role information.
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <input class="form-control" type="text" id="search-input" placeholder="Search staff…" style="max-width:300px" />
+      </div>
+      <div class="card__body table-responsive">
+        <table class="table">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Role</th><th>Phone</th><th>Status</th><th>Date Added</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="staff-body"><tr><td colspan="7" class="text-center text-muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal" id="staff-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box modal__box--sm">
+    <div class="modal__header">
+      <h3 id="staff-modal-title">Add Staff</h3>
+      <button class="modal__close" id="close-staff-modal">✕</button>
+    </div>
+    <form class="modal__body">
+      <input type="hidden" id="staff-id" />
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input class="form-control" type="text" id="f-sname" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email (Firebase Auth) *</label>
+        <input class="form-control" type="email" id="f-semail" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select class="form-control" id="f-srole">
+          <option value="cashier">Cashier</option>
+          <option value="pharmacist">Pharmacist</option>
+          <option value="admin">Administrator</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-control" type="tel" id="f-sphone" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" id="f-sstatus">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="f-snotes" rows="2"></textarea>
+      </div>
+    </form>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="cancel-staff-modal">Cancel</button>
+      <button class="btn btn--primary" id="save-staff-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script type="module">
+  import { db } from '/js/firebase-config.js';
+  import { requireAdmin, handleSignOut, showToast, formatDate, logActivity, populateTopbar } from '/js/main.js';
+  import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  let staffList = [];
+  let currentUser = null;
+
+  requireAdmin(async user => {
+    currentUser = user;
+    populateTopbar(user);
+    document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();
+    await loadStaff();
+  });
+
+  document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+  document.getElementById('menu-toggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('sidebar--open'));
+
+  async function loadStaff() {
+    const snap = await getDocs(query(collection(db, 'staff'), orderBy('name')));
+    staffList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTable();
+  }
+
+  function renderTable() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    let list = staffList.filter(s => !search || s.name?.toLowerCase().includes(search) || s.email?.toLowerCase().includes(search));
+    const roleColor = { admin:'badge--blue', cashier:'badge--green', pharmacist:'badge--purple' };
+    const tbody = document.getElementById('staff-body');
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No staff found</td></tr>'; return; }
+    tbody.innerHTML = list.map(s => `
+      <tr>
+        <td><strong>${s.name}</strong></td>
+        <td>${s.email}</td>
+        <td><span class="badge ${roleColor[s.role] || 'badge--grey'}">${s.role || 'cashier'}</span></td>
+        <td>${s.phone || '—'}</td>
+        <td><span class="badge ${s.status === 'active' ? 'badge--green' : 'badge--red'}">${s.status || 'active'}</span></td>
+        <td class="text-sm text-muted">${formatDate(s.createdAt)}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn--ghost btn--sm" onclick="editStaff('${s.id}')">Edit</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('search-input').addEventListener('input', renderTable);
+  document.getElementById('add-staff-btn').addEventListener('click', () => openModal());
+  document.getElementById('close-staff-modal').addEventListener('click', closeModal);
+  document.getElementById('cancel-staff-modal').addEventListener('click', closeModal);
+
+  function openModal(s = null) {
+    document.getElementById('staff-modal-title').textContent = s ? 'Edit Staff' : 'Add Staff';
+    document.getElementById('staff-id').value = s?.id || '';
+    document.getElementById('f-sname').value = s?.name || '';
+    document.getElementById('f-semail').value = s?.email || '';
+    document.getElementById('f-srole').value = s?.role || 'cashier';
+    document.getElementById('f-sphone').value = s?.phone || '';
+    document.getElementById('f-sstatus').value = s?.status || 'active';
+    document.getElementById('f-snotes').value = s?.notes || '';
+    document.getElementById('staff-modal').classList.add('modal--open');
+  }
+
+  function closeModal() { document.getElementById('staff-modal').classList.remove('modal--open'); }
+
+  window.editStaff = id => { const s = staffList.find(x => x.id === id); if (s) openModal(s); };
+
+  document.getElementById('save-staff-btn').addEventListener('click', async () => {
+    const id = document.getElementById('staff-id').value;
+    const data = {
+      name: document.getElementById('f-sname').value.trim(),
+      email: document.getElementById('f-semail').value.trim().toLowerCase(),
+      role: document.getElementById('f-srole').value,
+      phone: document.getElementById('f-sphone').value.trim(),
+      status: document.getElementById('f-sstatus').value,
+      notes: document.getElementById('f-snotes').value.trim(),
+      updatedAt: serverTimestamp(),
+    };
+    if (!data.name || !data.email) { showToast('Name and email are required', 'error'); return; }
+    try {
+      if (id) {
+        await updateDoc(doc(db, 'staff', id), data);
+        showToast('Staff updated');
+      } else {
+        data.createdAt = serverTimestamp();
+        data.addedBy = currentUser.uid;
+        await addDoc(collection(db, 'staff'), data);
+        showToast('Staff added');
+      }
+      closeModal();
+      await loadStaff();
+    } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+  });
+</script>
+</body>
+</html>

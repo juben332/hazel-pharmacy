@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hazel Pharmacy — Reports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__logo">
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#1d4ed8"/><path d="M13 20h14M20 13v14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <span>Hazel Admin</span>
+  </div>
+  <nav class="sidebar__nav">
+    <a href="/admin/index.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="/pos.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      POS / Cashier
+    </a>
+    <a href="/admin/inventory.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Inventory
+    </a>
+    <a href="/admin/prescriptions.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Prescriptions
+    </a>
+    <a href="/admin/customers.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Customers
+    </a>
+    <a href="/admin/reports.html" class="sidebar__link sidebar__link--active">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </a>
+    <a href="/admin/staff.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/></svg>
+      Staff
+    </a>
+  </nav>
+  <div class="sidebar__bottom">
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-avatar">A</div>
+      <div>
+        <p class="sidebar__uname" id="topbar-name">—</p>
+        <p class="sidebar__urole" id="topbar-role">Administrator</p>
+      </div>
+    </div>
+    <button class="sidebar__signout" id="sign-out-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header class="topbar">
+    <button class="topbar__menu" id="menu-toggle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h2 class="topbar__title">Sales Reports</h2>
+    <div class="topbar-actions">
+      <select class="form-control form-control--sm" id="report-period">
+        <option value="today">Today</option>
+        <option value="week" selected>This Week</option>
+        <option value="month">This Month</option>
+        <option value="custom">Custom Range</option>
+      </select>
+      <div id="custom-range" style="display:none" class="date-range-inputs">
+        <input class="form-control form-control--sm" type="date" id="range-from" />
+        <span>to</span>
+        <input class="form-control form-control--sm" type="date" id="range-to" />
+      </div>
+      <button class="btn btn--primary btn--sm" id="load-report-btn">Load</button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- Summary cards -->
+    <div class="stats-grid" id="report-stats">
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <div><p class="stat-card__label">Total Revenue</p><p class="stat-card__value" id="rep-revenue">₱0.00</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+        <div><p class="stat-card__label">Transactions</p><p class="stat-card__value" id="rep-txns">0</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--yellow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div><p class="stat-card__label">Avg Transaction</p><p class="stat-card__value" id="rep-avg">₱0.00</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--purple"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+        <div><p class="stat-card__label">Items Sold</p><p class="stat-card__value" id="rep-items">0</p></div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="card__header"><h3>Sales Over Time</h3></div>
+        <div class="card__body"><canvas id="report-chart" height="220"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card__header"><h3>Payment Methods</h3></div>
+        <div class="card__body"><canvas id="payment-chart" height="220"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Transactions table -->
+    <div class="card">
+      <div class="card__header">
+        <h3>Transaction Log</h3>
+        <button class="btn btn--outline btn--sm" id="export-csv-btn">Export CSV</button>
+      </div>
+      <div class="card__body table-responsive">
+        <table class="table">
+          <thead>
+            <tr><th>Txn #</th><th>Date / Time</th><th>Cashier</th><th>Items</th><th>Subtotal</th><th>Discount</th><th>Total</th><th>Payment</th></tr>
+          </thead>
+          <tbody id="txn-body"><tr><td colspan="8" class="text-center text-muted">Select a period and click Load</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script type="module">
+  import { db } from '/js/firebase-config.js';
+  import { requireAdmin, handleSignOut, showToast, formatPeso, formatDate, populateTopbar } from '/js/main.js';
+  import { collection, getDocs, query, where, orderBy, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  let allTxns = [];
+  let chartRef = null;
+  let payChartRef = null;
+
+  requireAdmin(async user => {
+    populateTopbar(user);
+    document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();
+    loadReport();
+  });
+
+  document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+  document.getElementById('menu-toggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('sidebar--open'));
+  document.getElementById('load-report-btn').addEventListener('click', loadReport);
+
+  document.getElementById('report-period').addEventListener('change', e => {
+    document.getElementById('custom-range').style.display = e.target.value === 'custom' ? 'flex' : 'none';
+  });
+
+  async function loadReport() {
+    const period = document.getElementById('report-period').value;
+    const now = new Date();
+    let from, to;
+
+    if (period === 'today') {
+      from = new Date(now); from.setHours(0,0,0,0);
+      to = new Date(now); to.setHours(23,59,59,999);
+    } else if (period === 'week') {
+      from = new Date(now); from.setDate(from.getDate() - 6); from.setHours(0,0,0,0);
+      to = new Date(now); to.setHours(23,59,59,999);
+    } else if (period === 'month') {
+      from = new Date(now.getFullYear(), now.getMonth(), 1);
+      to = new Date(now); to.setHours(23,59,59,999);
+    } else {
+      from = new Date(document.getElementById('range-from').value);
+      to = new Date(document.getElementById('range-to').value); to.setHours(23,59,59,999);
+      if (!from || !to || isNaN(from) || isNaN(to)) { showToast('Select a valid date range', 'error'); return; }
+    }
+
+    const snap = await getDocs(query(
+      collection(db, 'transactions'),
+      where('createdAt', '>=', Timestamp.fromDate(from)),
+      where('createdAt', '<=', Timestamp.fromDate(to)),
+      where('status', '==', 'completed'),
+      orderBy('createdAt', 'desc')
+    ));
+    allTxns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderSummary();
+    renderTable();
+    renderCharts(from, to, period);
+  }
+
+  function renderSummary() {
+    const revenue = allTxns.reduce((s, t) => s + (t.total || 0), 0);
+    const items = allTxns.reduce((s, t) => s + (t.items?.reduce((a, i) => a + i.qty, 0) || 0), 0);
+    document.getElementById('rep-revenue').textContent = formatPeso(revenue);
+    document.getElementById('rep-txns').textContent = allTxns.length;
+    document.getElementById('rep-avg').textContent = allTxns.length ? formatPeso(revenue / allTxns.length) : '₱0.00';
+    document.getElementById('rep-items').textContent = items;
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('txn-body');
+    if (!allTxns.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No transactions</td></tr>'; return; }
+    tbody.innerHTML = allTxns.map(t => `
+      <tr>
+        <td><span class="font-mono text-sm">${t.id.slice(-8).toUpperCase()}</span></td>
+        <td class="text-sm">${formatDate(t.createdAt)}</td>
+        <td class="text-sm">${t.cashierName || '—'}</td>
+        <td>${t.items?.length || 0}</td>
+        <td>${formatPeso(t.subtotal)}</td>
+        <td>${t.discountAmount > 0 ? formatPeso(t.discountAmount) : '—'}</td>
+        <td class="font-bold">${formatPeso(t.total)}</td>
+        <td><span class="badge badge--blue">${t.paymentMethod}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  function renderCharts(from, to, period) {
+    // Build daily buckets
+    const days = Math.ceil((to - from) / 86400000) + 1;
+    const labels = [], data = [];
+    for (let i = 0; i < Math.min(days, 31); i++) {
+      const d = new Date(from); d.setDate(d.getDate() + i);
+      const label = d.toLocaleDateString('en-PH', { month:'short', day:'numeric' });
+      const dayTotal = allTxns
+        .filter(t => {
+          const td = t.createdAt?.toDate?.() || new Date(t.createdAt);
+          return td.toDateString() === d.toDateString();
+        })
+        .reduce((s, t) => s + (t.total || 0), 0);
+      labels.push(label);
+      data.push(dayTotal);
+    }
+
+    if (chartRef) chartRef.destroy();
+    chartRef = new Chart(document.getElementById('report-chart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Revenue (₱)', data,
+          borderColor: '#1d4ed8', backgroundColor: 'rgba(29,78,216,0.1)',
+          fill: true, tension: 0.3, pointRadius: 4,
+        }],
+      },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+    });
+
+    // Payment method breakdown
+    const payMap = {};
+    allTxns.forEach(t => { payMap[t.paymentMethod] = (payMap[t.paymentMethod] || 0) + (t.total || 0); });
+    if (payChartRef) payChartRef.destroy();
+    payChartRef = new Chart(document.getElementById('payment-chart'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(payMap),
+        datasets: [{ data: Object.values(payMap), backgroundColor: ['#1d4ed8','#16a34a','#d97706','#7c3aed'] }],
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
+    });
+  }
+
+  document.getElementById('export-csv-btn').addEventListener('click', () => {
+    if (!allTxns.length) { showToast('No data to export', 'warning'); return; }
+    const rows = [['Txn #','Date','Cashier','Items','Subtotal','Discount','Total','Payment']];
+    allTxns.forEach(t => rows.push([
+      t.id.slice(-8).toUpperCase(),
+      (t.createdAt?.toDate?.() || new Date(t.createdAt)).toLocaleString('en-PH'),
+      t.cashierName || '',
+      t.items?.length || 0,
+      t.subtotal?.toFixed(2),
+      t.discountAmount?.toFixed(2) || 0,
+      t.total?.toFixed(2),
+      t.paymentMethod,
+    ]));
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `hazel-sales-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  });
+</script>
+</body>
+</html>

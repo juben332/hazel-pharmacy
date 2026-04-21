@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hazel Pharmacy — Inventory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__logo">
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#1d4ed8"/><path d="M13 20h14M20 13v14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
+    <span>Hazel Admin</span>
+  </div>
+  <nav class="sidebar__nav">
+    <a href="/admin/index.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="/pos.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      POS / Cashier
+    </a>
+    <a href="/admin/inventory.html" class="sidebar__link sidebar__link--active">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Inventory
+    </a>
+    <a href="/admin/prescriptions.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Prescriptions
+    </a>
+    <a href="/admin/customers.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Customers
+    </a>
+    <a href="/admin/reports.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </a>
+    <a href="/admin/staff.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/></svg>
+      Staff
+    </a>
+  </nav>
+  <div class="sidebar__bottom">
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-avatar">A</div>
+      <div>
+        <p class="sidebar__uname" id="topbar-name">—</p>
+        <p class="sidebar__urole" id="topbar-role">Administrator</p>
+      </div>
+    </div>
+    <button class="sidebar__signout" id="sign-out-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header class="topbar">
+    <button class="topbar__menu" id="menu-toggle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h2 class="topbar__title">Inventory</h2>
+    <button class="btn btn--primary" id="add-product-btn">+ Add Product</button>
+  </header>
+
+  <div class="page-body">
+    <div class="card">
+      <div class="card__header">
+        <div class="search-filter-row">
+          <input class="form-control" type="text" id="search-input" placeholder="Search products…" />
+          <select class="form-control" id="category-filter"><option value="">All Categories</option></select>
+          <select class="form-control" id="stock-filter">
+            <option value="">All Stock Levels</option>
+            <option value="low">Low Stock</option>
+            <option value="out">Out of Stock</option>
+          </select>
+        </div>
+      </div>
+      <div class="card__body table-responsive">
+        <table class="table" id="product-table">
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>Barcode</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Threshold</th>
+              <th>Rx</th>
+              <th>Expiry</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="product-body"><tr><td colspan="9" class="text-center text-muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal" id="product-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box">
+    <div class="modal__header">
+      <h3 id="modal-title">Add Product</h3>
+      <button class="modal__close" id="close-modal">✕</button>
+    </div>
+    <form id="product-form" class="modal__body">
+      <input type="hidden" id="product-id" />
+      <div class="form-grid">
+        <div class="form-group form-group--full">
+          <label class="form-label">Product Name *</label>
+          <input class="form-control" type="text" id="f-name" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <input class="form-control" type="text" id="f-category" placeholder="e.g. Antibiotics" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Barcode</label>
+          <input class="form-control" type="text" id="f-barcode" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Price (₱) *</label>
+          <input class="form-control" type="number" id="f-price" step="0.01" min="0" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cost Price (₱)</label>
+          <input class="form-control" type="number" id="f-cost" step="0.01" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stock Quantity *</label>
+          <input class="form-control" type="number" id="f-stock" min="0" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Low Stock Threshold</label>
+          <input class="form-control" type="number" id="f-threshold" min="1" value="10" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Expiry Date</label>
+          <input class="form-control" type="date" id="f-expiry" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Supplier</label>
+          <input class="form-control" type="text" id="f-supplier" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit</label>
+          <input class="form-control" type="text" id="f-unit" placeholder="e.g. tablet, bottle, box" />
+        </div>
+        <div class="form-group form-group--full">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" id="f-desc" rows="2"></textarea>
+        </div>
+        <div class="form-group form-group--full">
+          <label class="checkbox-label">
+            <input type="checkbox" id="f-rx" />
+            Requires Prescription (Rx)
+          </label>
+        </div>
+      </div>
+    </form>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="cancel-modal">Cancel</button>
+      <button class="btn btn--primary" id="save-product-btn">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal" id="delete-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box modal__box--sm">
+    <div class="modal__header"><h3>Delete Product</h3></div>
+    <div class="modal__body">
+      <p>Are you sure you want to delete <strong id="delete-product-name"></strong>? This action cannot be undone.</p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="cancel-delete">Cancel</button>
+      <button class="btn btn--danger" id="confirm-delete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script type="module">
+  import { db } from '/js/firebase-config.js';
+  import { requireAdmin, handleSignOut, showToast, formatPeso, formatDateShort, logActivity, populateTopbar } from '/js/main.js';
+  import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  let products = [];
+  let currentUser = null;
+  let deleteTargetId = null;
+
+  requireAdmin(async user => {
+    currentUser = user;
+    populateTopbar(user);
+    document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();
+    await loadProducts();
+  });
+
+  document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+  document.getElementById('menu-toggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('sidebar--open'));
+
+  async function loadProducts() {
+    const snap = await getDocs(collection(db, 'products'));
+    products = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.name?.localeCompare(b.name));
+    buildCategoryFilter();
+    renderTable();
+  }
+
+  function buildCategoryFilter() {
+    const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+    const sel = document.getElementById('category-filter');
+    sel.innerHTML = '<option value="">All Categories</option>' + cats.map(c => `<option>${c}</option>`).join('');
+  }
+
+  function renderTable() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const cat = document.getElementById('category-filter').value;
+    const stockF = document.getElementById('stock-filter').value;
+
+    let list = products.filter(p => {
+      if (search && !p.name?.toLowerCase().includes(search) && !p.barcode?.includes(search)) return false;
+      if (cat && p.category !== cat) return false;
+      if (stockF === 'low' && !(p.stock > 0 && p.stock <= (p.lowStockThreshold || 10))) return false;
+      if (stockF === 'out' && p.stock !== 0) return false;
+      return true;
+    });
+
+    const tbody = document.getElementById('product-body');
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No products found</td></tr>'; return; }
+    tbody.innerHTML = list.map(p => {
+      const isLow = p.stock <= (p.lowStockThreshold || 10) && p.stock > 0;
+      const isOut = p.stock === 0;
+      const stockBadge = isOut ? '<span class="badge badge--red">Out</span>' : isLow ? `<span class="badge badge--yellow">${p.stock}</span>` : `<span class="badge badge--green">${p.stock}</span>`;
+      return `<tr>
+        <td><strong>${p.name}</strong>${p.description ? `<br/><small class="text-muted">${p.description}</small>` : ''}</td>
+        <td>${p.category || '—'}</td>
+        <td><span class="font-mono text-sm">${p.barcode || '—'}</span></td>
+        <td>${formatPeso(p.price)}</td>
+        <td>${stockBadge}</td>
+        <td>${p.lowStockThreshold || 10}</td>
+        <td>${p.requiresPrescription ? '<span class="badge badge--blue">Rx</span>' : '—'}</td>
+        <td class="text-sm">${p.expiryDate || '—'}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn--ghost btn--sm" onclick="editProduct('${p.id}')">Edit</button>
+            <button class="btn btn--danger-ghost btn--sm" onclick="deleteProduct('${p.id}','${p.name.replace(/'/g,"\\'")}')">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  ['search-input','category-filter','stock-filter'].forEach(id =>
+    document.getElementById(id).addEventListener('input', renderTable)
+  );
+
+  // ── Add / Edit ─────────────────────────────────────────────────────────────
+  document.getElementById('add-product-btn').addEventListener('click', () => openModal());
+  document.getElementById('close-modal').addEventListener('click', closeModal);
+  document.getElementById('cancel-modal').addEventListener('click', closeModal);
+
+  function openModal(product = null) {
+    document.getElementById('modal-title').textContent = product ? 'Edit Product' : 'Add Product';
+    document.getElementById('product-id').value = product?.id || '';
+    document.getElementById('f-name').value = product?.name || '';
+    document.getElementById('f-category').value = product?.category || '';
+    document.getElementById('f-barcode').value = product?.barcode || '';
+    document.getElementById('f-price').value = product?.price || '';
+    document.getElementById('f-cost').value = product?.costPrice || '';
+    document.getElementById('f-stock').value = product?.stock ?? '';
+    document.getElementById('f-threshold').value = product?.lowStockThreshold || 10;
+    document.getElementById('f-expiry').value = product?.expiryDate || '';
+    document.getElementById('f-supplier').value = product?.supplier || '';
+    document.getElementById('f-unit').value = product?.unit || '';
+    document.getElementById('f-desc').value = product?.description || '';
+    document.getElementById('f-rx').checked = product?.requiresPrescription || false;
+    document.getElementById('product-modal').classList.add('modal--open');
+  }
+
+  function closeModal() {
+    document.getElementById('product-modal').classList.remove('modal--open');
+  }
+
+  window.editProduct = id => {
+    const p = products.find(x => x.id === id);
+    if (p) openModal(p);
+  };
+
+  document.getElementById('save-product-btn').addEventListener('click', async () => {
+    const id = document.getElementById('product-id').value;
+    const data = {
+      name: document.getElementById('f-name').value.trim(),
+      category: document.getElementById('f-category').value.trim(),
+      barcode: document.getElementById('f-barcode').value.trim(),
+      price: parseFloat(document.getElementById('f-price').value) || 0,
+      costPrice: parseFloat(document.getElementById('f-cost').value) || 0,
+      stock: parseInt(document.getElementById('f-stock').value) || 0,
+      lowStockThreshold: parseInt(document.getElementById('f-threshold').value) || 10,
+      expiryDate: document.getElementById('f-expiry').value || null,
+      supplier: document.getElementById('f-supplier').value.trim(),
+      unit: document.getElementById('f-unit').value.trim(),
+      description: document.getElementById('f-desc').value.trim(),
+      requiresPrescription: document.getElementById('f-rx').checked,
+      updatedAt: serverTimestamp(),
+    };
+
+    if (!data.name || data.price <= 0) { showToast('Name and price are required', 'error'); return; }
+
+    try {
+      if (id) {
+        await updateDoc(doc(db, 'products', id), data);
+        showToast('Product updated');
+        await logActivity(currentUser, 'product_updated', { id, name: data.name });
+      } else {
+        data.createdAt = serverTimestamp();
+        const ref = await addDoc(collection(db, 'products'), data);
+        showToast('Product added');
+        await logActivity(currentUser, 'product_added', { id: ref.id, name: data.name });
+      }
+      closeModal();
+      await loadProducts();
+    } catch (err) {
+      showToast('Failed: ' + err.message, 'error');
+    }
+  });
+
+  // ── Delete ─────────────────────────────────────────────────────────────────
+  window.deleteProduct = (id, name) => {
+    deleteTargetId = id;
+    document.getElementById('delete-product-name').textContent = name;
+    document.getElementById('delete-modal').classList.add('modal--open');
+  };
+
+  document.getElementById('cancel-delete').addEventListener('click', () => document.getElementById('delete-modal').classList.remove('modal--open'));
+  document.getElementById('confirm-delete').addEventListener('click', async () => {
+    try {
+      await deleteDoc(doc(db, 'products', deleteTargetId));
+      await logActivity(currentUser, 'product_deleted', { id: deleteTargetId });
+      showToast('Product deleted');
+      document.getElementById('delete-modal').classList.remove('modal--open');
+      await loadProducts();
+    } catch (err) { showToast('Delete failed: ' + err.message, 'error'); }
+  });
+</script>
+</body>
+</html>

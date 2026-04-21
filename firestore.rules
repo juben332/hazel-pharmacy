@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'wardopon123@gmail.com';
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Products — signed-in users can read, only admin writes
+    match /products/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Transactions — cashier can create, admin reads all, cashier reads own
+    match /transactions/{id} {
+      allow create: if isSignedIn();
+      allow read:   if isSignedIn() && (
+        isAdmin() || resource.data.cashierId == request.auth.uid
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // Prescriptions — signed-in can create/read, admin full access
+    match /prescriptions/{id} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // Customers — signed-in can read/create, admin full access
+    match /customers/{id} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // Staff — admin only
+    match /staff/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // Activity log — signed-in can create, admin reads all
+    match /activityLog/{id} {
+      allow create: if isSignedIn();
+      allow read:   if isAdmin();
+    }
+  }
+}
