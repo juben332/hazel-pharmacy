@@ -885,11 +885,11 @@ tbody tr:hover { background: #f8fafc; }
     gap: 8px; padding: 10px;
     padding-bottom: 86px; /* room for FAB */
   }
-  .pos-product-card { padding: 10px 10px 8px; }
-  .pos-product-card__name { font-size: 0.78rem; }
-  .pos-product-card__cat  { font-size: 0.66rem; }
-  .pos-product-card__price { font-size: 0.84rem; }
-  .pos-product-card__stock { font-size: 0.65rem; }
+  .pos-product-card { padding: 12px 10px 10px; }
+  .pos-product-card__name { font-size: 0.82rem; line-height: 1.25; }
+  .pos-product-card__cat  { font-size: 0.65rem; margin-bottom: 6px; }
+  .pos-product-card__price { font-size: 1.05rem; margin-bottom: 3px; }
+  .pos-product-card__stock { font-size: 0.68rem; }
 
   /* Cart: slide-up drawer */
   .pos-right {
@@ -944,7 +944,8 @@ tbody tr:hover { background: #f8fafc; }
   .stats-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
   .stat-card__value { font-size: 1.1rem; }
   .pos-product-grid { gap: 6px; padding: 8px; padding-bottom: 86px; }
-  .pos-product-card { padding: 8px; }
-  .pos-product-card__name { font-size: 0.74rem; }
+  .pos-product-card { padding: 10px 8px 8px; }
+  .pos-product-card__name { font-size: 0.78rem; }
+  .pos-product-card__price { font-size: 0.95rem; }
 }
 
