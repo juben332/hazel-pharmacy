@@ -653,7 +653,8 @@
 
     msg.textContent = `Low stock: ${lowItems.map(p => p.name).join(', ')}`;
     pillCount.textContent = `${lowItems.length} low stock`;
-    banner.hidden = false;
+    // Start collapsed — pill visible, banner hidden
+    pill.hidden = false;
 
     toggle.addEventListener('click', () => {
       banner.hidden = true;
