@@ -78,7 +78,10 @@
         <div class="pos-cart__handle"><div class="pos-cart__handle-bar"></div></div>
         <div class="pos-cart__header">
           <h3>Current Order</h3>
-          <button class="btn btn--ghost btn--sm" id="clear-cart-btn">Clear</button>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="btn btn--ghost btn--sm" id="clear-cart-btn">Clear</button>
+            <button class="pos-cart__close-btn" id="close-cart-btn" aria-label="Close cart">✕</button>
+          </div>
         </div>
 
         <div class="pos-cart__customer">
@@ -197,18 +200,73 @@
   const cartPanel = document.getElementById('cart-panel');
   const cartOverlay = document.getElementById('cart-overlay');
   const cartFab = document.getElementById('cart-fab');
+
   function openCart() {
     cartPanel.classList.add('cart-open');
     cartOverlay.classList.add('pos-cart-overlay--show');
+    // Block body pull-to-refresh while cart is open
+    document.body.style.overscrollBehaviorY = 'contain';
   }
   function closeCart() {
-    cartPanel.classList.remove('cart-open');
+    cartPanel.style.transform = '';
+    cartPanel.classList.remove('cart-open', 'cart-dragging');
     cartOverlay.classList.remove('pos-cart-overlay--show');
+    document.body.style.overscrollBehaviorY = '';
   }
+
   cartFab.addEventListener('click', openCart);
   cartOverlay.addEventListener('click', closeCart);
-  // Close cart when checkout button tapped (receipt will appear)
+  document.getElementById('close-cart-btn').addEventListener('click', closeCart);
+  // Close after checkout (receipt modal takes over)
   document.getElementById('checkout-btn').addEventListener('click', closeCart, { capture: false });
+
+  // ── Swipe-to-dismiss the cart drawer ──────────────────────────────────────
+  (function () {
+    const handle = document.querySelector('.pos-cart__handle');
+    let startY = 0, startTranslate = 0, dragging = false;
+    const DISMISS_THRESHOLD = 130; // px to dismiss
+
+    function getTranslate() {
+      const t = new DOMMatrix(getComputedStyle(cartPanel).transform);
+      return t.m42; // translateY value
+    }
+
+    handle.addEventListener('touchstart', e => {
+      if (!cartPanel.classList.contains('cart-open')) return;
+      startY = e.touches[0].clientY;
+      startTranslate = 0;
+      dragging = true;
+      cartPanel.classList.add('cart-dragging');
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy < 0) return; // don't allow dragging up beyond 0
+      e.preventDefault(); // prevent pull-to-refresh
+      cartPanel.style.transform = `translateY(${dy}px)`;
+      // Fade overlay based on drag distance
+      const progress = Math.min(dy / DISMISS_THRESHOLD, 1);
+      cartOverlay.style.opacity = 1 - progress * 0.7;
+    }, { passive: false });
+
+    handle.addEventListener('touchend', e => {
+      if (!dragging) return;
+      dragging = false;
+      const dy = e.changedTouches[0].clientY - startY;
+      cartPanel.classList.remove('cart-dragging');
+      cartOverlay.style.opacity = '';
+      if (dy > DISMISS_THRESHOLD) {
+        // Animate out then close
+        cartPanel.style.transition = 'transform 0.25s ease';
+        cartPanel.style.transform = `translateY(100%)`;
+        setTimeout(closeCart, 260);
+      } else {
+        // Snap back
+        cartPanel.style.transform = '';
+      }
+    }, { passive: true });
+  })();
 
   // ── Load Products ──────────────────────────────────────────────────────────
   async function loadProducts() {
