@@ -192,10 +192,10 @@
       collection(db, 'transactions'),
       where('createdAt', '>=', Timestamp.fromDate(from)),
       where('createdAt', '<=', Timestamp.fromDate(to)),
-      where('status', '==', 'completed'),
       orderBy('createdAt', 'desc')
     ));
-    allTxns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Filter completed in JS — avoids needing a composite Firestore index
+    allTxns = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => t.status === 'completed');
     renderSummary();
     renderTable();
     renderCharts(from, to, period);

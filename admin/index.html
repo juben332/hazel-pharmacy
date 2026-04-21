@@ -171,13 +171,14 @@
 
   async function loadStats() {
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    // Single-field range query only — filter status in JS to avoid needing a composite index
     const [txSnap, prodSnap, custSnap] = await Promise.all([
-      getDocs(query(collection(db, 'transactions'), where('createdAt', '>=', Timestamp.fromDate(todayStart)), where('status','==','completed'))),
+      getDocs(query(collection(db, 'transactions'), where('createdAt', '>=', Timestamp.fromDate(todayStart)))),
       getDocs(collection(db, 'products')),
       getDocs(collection(db, 'customers')),
     ]);
 
-    const txns = txSnap.docs.map(d => d.data());
+    const txns = txSnap.docs.map(d => d.data()).filter(t => t.status === 'completed');
     const products = prodSnap.docs.map(d => d.data());
     const todaySales = txns.reduce((s, t) => s + (t.total || 0), 0);
     const lowStock = products.filter(p => p.stock <= (p.lowStockThreshold || 10)).length;
@@ -212,10 +213,10 @@
       const next = new Date(d); next.setDate(next.getDate() + 1);
       const snap = await getDocs(query(collection(db, 'transactions'),
         where('createdAt', '>=', Timestamp.fromDate(d)),
-        where('createdAt', '<', Timestamp.fromDate(next)),
-        where('status', '==', 'completed')
+        where('createdAt', '<', Timestamp.fromDate(next))
       ));
-      const total = snap.docs.reduce((s, doc) => s + (doc.data().total || 0), 0);
+      // Filter completed in JS — avoids needing a composite Firestore index
+      const total = snap.docs.filter(doc => doc.data().status === 'completed').reduce((s, doc) => s + (doc.data().total || 0), 0);
       labels.push(d.toLocaleDateString('en-PH', { month:'short', day:'numeric' }));
       data.push(total);
     }
