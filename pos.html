@@ -316,13 +316,18 @@
     grid.innerHTML = list.map(p => {
       const cartItem = cart.find(x => x.id === p.id);
       const inCart = !!cartItem;
+      const isLow = p.stock <= (p.lowStockThreshold || 10);
       return `
         <div class="pos-product-card ${inCart ? 'pos-product-card--in-cart' : ''}" data-id="${p.id}">
-          ${inCart ? `<div class="pos-product-card__badge">${cartItem.qty}</div>` : ''}
-          <div class="pos-product-card__name">${p.name}</div>
-          <div class="pos-product-card__cat">${p.category || '—'}</div>
-          <div class="pos-product-card__price">${formatPeso(p.price)}</div>
-          <div class="pos-product-card__stock ${p.stock <= (p.lowStockThreshold || 10) ? 'low' : ''}">${p.stock} in stock</div>
+          <div class="pos-product-card__header">
+            <div class="pos-product-card__name">${p.name}</div>
+            ${inCart ? `<div class="pos-product-card__badge">${cartItem.qty}</div>` : ''}
+          </div>
+          <div class="pos-product-card__cat">${p.category || ''}</div>
+          <div class="pos-product-card__footer">
+            <div class="pos-product-card__price">${formatPeso(p.price)}</div>
+            <div class="pos-product-card__stock ${isLow ? 'low' : ''}">${p.stock} left</div>
+          </div>
         </div>`;
     }).join('');
     grid.querySelectorAll('.pos-product-card').forEach(card => {
@@ -330,18 +335,19 @@
     });
   }
 
-  // Update just the card states without re-rendering the whole grid
+  // Update card states without re-rendering the whole grid
   function updateCardStates() {
     document.querySelectorAll('.pos-product-card[data-id]').forEach(card => {
       const cartItem = cart.find(x => x.id === card.dataset.id);
       const inCart = !!cartItem;
       card.classList.toggle('pos-product-card--in-cart', inCart);
+      const header = card.querySelector('.pos-product-card__header');
       let badge = card.querySelector('.pos-product-card__badge');
       if (inCart) {
         if (!badge) {
           badge = document.createElement('div');
           badge.className = 'pos-product-card__badge';
-          card.prepend(badge);
+          header.appendChild(badge);
         }
         badge.textContent = cartItem.qty;
       } else if (badge) {
