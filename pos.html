@@ -179,10 +179,19 @@
 </div>
 
 <!-- Low Stock Alert Banner -->
+<!-- Low Stock Banner — click chevron to collapse, click pill to expand -->
 <div class="low-stock-banner" id="low-stock-banner" hidden>
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-  <span id="low-stock-msg"></span>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <span id="low-stock-msg" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+  <button class="low-stock-banner__toggle" id="low-stock-toggle" aria-label="Hide low stock alert" title="Click to hide">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
 </div>
+<!-- Collapsed pill — click to expand banner -->
+<button class="low-stock-pill" id="low-stock-pill" hidden aria-label="Show low stock alert">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <span id="low-stock-pill-count"></span>
+</button>
 
 <div id="toast-container" class="toast-container"></div>
 
@@ -634,11 +643,26 @@
   // ── Low Stock Alert ────────────────────────────────────────────────────────
   async function checkLowStock() {
     const lowItems = products.filter(p => p.stock <= (p.lowStockThreshold || 10) && p.stock > 0);
-    if (lowItems.length) {
-      const banner = document.getElementById('low-stock-banner');
-      document.getElementById('low-stock-msg').textContent = `⚠ Low stock: ${lowItems.map(p => p.name).join(', ')}`;
+    if (!lowItems.length) return;
+
+    const banner = document.getElementById('low-stock-banner');
+    const pill   = document.getElementById('low-stock-pill');
+    const msg    = document.getElementById('low-stock-msg');
+    const toggle = document.getElementById('low-stock-toggle');
+    const pillCount = document.getElementById('low-stock-pill-count');
+
+    msg.textContent = `Low stock: ${lowItems.map(p => p.name).join(', ')}`;
+    pillCount.textContent = `${lowItems.length} low stock`;
+    banner.hidden = false;
+
+    toggle.addEventListener('click', () => {
+      banner.hidden = true;
+      pill.hidden = false;
+    });
+    pill.addEventListener('click', () => {
+      pill.hidden = true;
       banner.hidden = false;
-    }
+    });
   }
 
   function setTopbarDate() {
