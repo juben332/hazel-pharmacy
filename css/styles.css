@@ -472,6 +472,7 @@ tbody tr:hover { background: #f8fafc; }
 .sidebar__icon { width: 18px; height: 18px; flex-shrink: 0; }
 .sidebar__link--active { background: rgba(59,130,246,0.2) !important; color: #fff !important; }
 .sidebar__link--active::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 3px; background: var(--blue-mid); border-radius: 0 3px 3px 0; }
+.sidebar__divider { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 14px 16px 4px; }
 .sidebar__bottom { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.08); margin-top: auto; }
 .sidebar__avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,var(--blue-mid),var(--green-mid)); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: #fff; flex-shrink: 0; }
 .sidebar__uname { font-size: 0.82rem; font-weight: 600; color: #fff; }
