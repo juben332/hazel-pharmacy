@@ -326,7 +326,7 @@
           <div class="pos-product-card__cat">${p.category || ''}</div>
           <div class="pos-product-card__footer">
             <div class="pos-product-card__price">${formatPeso(p.price)}</div>
-            ${isLow ? `<div class="pos-product-card__stock low">Low</div>` : ''}
+            <div class="pos-product-card__stock ${isLow ? 'low' : ''}">${p.stock} left</div>
           </div>
         </div>`;
     }).join('');
