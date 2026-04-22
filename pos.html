@@ -82,7 +82,7 @@
     <!-- LEFT: Product Search + Grid -->
     <div class="pos-left">
       <div class="pos-search-bar">
-        <input class="form-control" type="text" id="product-search" placeholder="Search product by name or barcode…" />
+        <input class="form-control" type="text" id="product-search" placeholder="Search product by name…" />
         <div class="pos-category-tabs" id="category-tabs"></div>
       </div>
       <div class="pos-product-grid" id="product-grid">
@@ -340,7 +340,7 @@
     if (filteredCategory !== 'all') list = list.filter(p => p.category === filteredCategory);
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(p => p.name?.toLowerCase().includes(q) || p.barcode?.includes(q));
+      list = list.filter(p => p.name?.toLowerCase().includes(q));
     }
     if (!list.length) { grid.innerHTML = '<div class="pos-empty">No products found</div>'; return; }
     grid.innerHTML = list.map(p => {

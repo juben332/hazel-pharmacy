@@ -89,7 +89,6 @@
             <tr>
               <th>Product Name</th>
               <th>Category</th>
-              <th>Barcode</th>
               <th>Price</th>
               <th>Stock</th>
               <th>Threshold</th>
@@ -98,7 +97,7 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="product-body"><tr><td colspan="9" class="text-center text-muted">Loading…</td></tr></tbody>
+          <tbody id="product-body"><tr><td colspan="8" class="text-center text-muted">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -123,10 +122,6 @@
         <div class="form-group">
           <label class="form-label">Category</label>
           <input class="form-control" type="text" id="f-category" placeholder="e.g. Antibiotics" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Barcode</label>
-          <input class="form-control" type="text" id="f-barcode" />
         </div>
         <div class="form-group">
           <label class="form-label">Price (₱) *</label>
@@ -239,7 +234,7 @@
     const stockF = document.getElementById('stock-filter').value;
 
     let list = products.filter(p => {
-      if (search && !p.name?.toLowerCase().includes(search) && !p.barcode?.includes(search)) return false;
+      if (search && !p.name?.toLowerCase().includes(search)) return false;
       if (cat && p.category !== cat) return false;
       if (stockF === 'low' && !(p.stock > 0 && p.stock <= (p.lowStockThreshold || 10))) return false;
       if (stockF === 'out' && p.stock !== 0) return false;
@@ -247,7 +242,7 @@
     });
 
     const tbody = document.getElementById('product-body');
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No products found</td></tr>'; return; }
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No products found</td></tr>'; return; }
     tbody.innerHTML = list.map(p => {
       const isLow = p.stock <= (p.lowStockThreshold || 10) && p.stock > 0;
       const isOut = p.stock === 0;
@@ -255,7 +250,6 @@
       return `<tr>
         <td><strong>${p.name}</strong>${p.description ? `<br/><small class="text-muted">${p.description}</small>` : ''}</td>
         <td>${p.category || '—'}</td>
-        <td><span class="font-mono text-sm">${p.barcode || '—'}</span></td>
         <td>${formatPeso(p.price)}</td>
         <td>${stockBadge}</td>
         <td>${p.lowStockThreshold || 10}</td>
@@ -285,7 +279,6 @@
     document.getElementById('product-id').value = product?.id || '';
     document.getElementById('f-name').value = product?.name || '';
     document.getElementById('f-category').value = product?.category || '';
-    document.getElementById('f-barcode').value = product?.barcode || '';
     document.getElementById('f-price').value = product?.price || '';
     document.getElementById('f-cost').value = product?.costPrice || '';
     document.getElementById('f-stock').value = product?.stock ?? '';
@@ -312,7 +305,6 @@
     const data = {
       name: document.getElementById('f-name').value.trim(),
       category: document.getElementById('f-category').value.trim(),
-      barcode: document.getElementById('f-barcode').value.trim(),
       price: parseFloat(document.getElementById('f-price').value) || 0,
       costPrice: parseFloat(document.getElementById('f-cost').value) || 0,
       stock: parseInt(document.getElementById('f-stock').value) || 0,
