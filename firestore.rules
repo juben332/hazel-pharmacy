@@ -37,9 +37,10 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Staff — admin only
+    // Staff — admin full access, signed-in users can read their own record
     match /staff/{id} {
-      allow read, write: if isAdmin();
+      allow read: if isSignedIn() && (isAdmin() || resource.data.email == request.auth.token.email);
+      allow write: if isAdmin();
     }
 
     // Activity log — signed-in can create, admin reads all
