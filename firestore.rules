@@ -26,10 +26,10 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // Prescriptions — signed-in can create/read, admin full access
+    // Prescriptions — signed-in can read/create/update, admin can delete
     match /prescriptions/{id} {
-      allow read, create: if isSignedIn();
-      allow update, delete: if isAdmin();
+      allow read, create, update: if isSignedIn();
+      allow delete: if isAdmin();
     }
 
     // Customers — signed-in can read/create, admin full access

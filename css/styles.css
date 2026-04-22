@@ -767,6 +767,12 @@ tbody tr:hover { background: #f8fafc; }
 .rx-warning { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 500; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; padding: 6px 10px; margin-top: 6px; }
 .form-control--rx-required { border-color: #f59e0b !important; background: #fffbeb !important; }
 .form-control--rx-required:focus { box-shadow: 0 0 0 3px rgba(245,158,11,0.2) !important; }
+.rx-lookup-result { font-size: 0.78rem; border-radius: 6px; padding: 8px 10px; margin-top: 6px; }
+.rx-lookup-result--loading { background: #f1f5f9; color: var(--text-3); }
+.rx-lookup-result--error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+.rx-lookup-result--ok { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+.rx-lookup-ok-row { display: flex; align-items: center; gap: 5px; font-weight: 600; margin-bottom: 4px; }
+.rx-lookup-detail { color: #15803d; margin-top: 2px; }
 
 /* Transaction log item list */
 .txn-items-list { display: flex; flex-direction: column; gap: 2px; }

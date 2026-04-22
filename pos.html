@@ -121,6 +121,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             Cart has Rx items — enter prescription number above to proceed.
           </div>
+          <div class="rx-lookup-result" id="rx-lookup-result" hidden></div>
         </div>
 
         <div class="pos-cart__items" id="cart-items">
@@ -466,7 +467,79 @@
     updateCardStates();
   });
 
-  document.getElementById('prescription-ref').addEventListener('input', updateTotals);
+  // ── Rx Lookup ──────────────────────────────────────────────────────────────
+  let currentRxRecord = null;
+  let rxLookupTimer = null;
+
+  document.getElementById('prescription-ref').addEventListener('input', () => {
+    clearTimeout(rxLookupTimer);
+    currentRxRecord = null;
+    const resultEl = document.getElementById('rx-lookup-result');
+    resultEl.hidden = true;
+    updateTotals();
+
+    const val = document.getElementById('prescription-ref').value.trim();
+    if (!val) return;
+
+    rxLookupTimer = setTimeout(() => lookupRx(val), 500);
+  });
+
+  async function lookupRx(rxNumber) {
+    const resultEl = document.getElementById('rx-lookup-result');
+    resultEl.hidden = false;
+    resultEl.className = 'rx-lookup-result rx-lookup-result--loading';
+    resultEl.textContent = 'Looking up prescription…';
+
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'prescriptions'),
+        where('rxNumber', '==', rxNumber),
+        limit(1)
+      ));
+
+      if (snap.empty) {
+        currentRxRecord = null;
+        resultEl.className = 'rx-lookup-result rx-lookup-result--error';
+        resultEl.innerHTML = `<strong>Not found:</strong> No prescription with Rx # <em>${rxNumber}</em> in the system.`;
+        updateTotals();
+        return;
+      }
+
+      const rx = snap.docs[0].data();
+      const today = new Date().toISOString().slice(0, 10);
+
+      if (rx.status === 'dispensed') {
+        currentRxRecord = { valid: false };
+        resultEl.className = 'rx-lookup-result rx-lookup-result--error';
+        resultEl.innerHTML = `<strong>Already dispensed:</strong> This prescription has already been used.`;
+        updateTotals();
+        return;
+      }
+      if (rx.status === 'expired' || (rx.validUntil && rx.validUntil < today)) {
+        currentRxRecord = { valid: false };
+        resultEl.className = 'rx-lookup-result rx-lookup-result--error';
+        resultEl.innerHTML = `<strong>Expired:</strong> This prescription expired on ${rx.validUntil || 'unknown date'}.`;
+        updateTotals();
+        return;
+      }
+
+      // Valid prescription
+      currentRxRecord = { valid: true, docId: snap.docs[0].id, rx };
+      resultEl.className = 'rx-lookup-result rx-lookup-result--ok';
+      resultEl.innerHTML = `
+        <div class="rx-lookup-ok-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <strong>Valid Prescription</strong></div>
+        <div class="rx-lookup-detail">Patient: <strong>${rx.patientName || '—'}</strong></div>
+        <div class="rx-lookup-detail">Doctor: ${rx.doctor || '—'}</div>
+        ${rx.validUntil ? `<div class="rx-lookup-detail">Valid until: ${rx.validUntil}</div>` : ''}
+      `;
+      updateTotals();
+    } catch (err) {
+      currentRxRecord = null;
+      resultEl.className = 'rx-lookup-result rx-lookup-result--error';
+      resultEl.textContent = 'Lookup failed: ' + err.message;
+      updateTotals();
+    }
+  }
 
   // ── Totals ─────────────────────────────────────────────────────────────────
   function updateTotals() {
@@ -493,8 +566,10 @@
     rxWarning.hidden = !hasRxItem;
     rxInput.classList.toggle('form-control--rx-required', hasRxItem && !rxRef);
 
+    // Disable checkout if Rx items exist but no valid prescription is confirmed
+    const rxValid = !hasRxItem || (rxRef && currentRxRecord && currentRxRecord.valid);
     document.getElementById('checkout-btn').disabled =
-      cart.length === 0 || total <= 0 || (hasRxItem && !rxRef);
+      cart.length === 0 || total <= 0 || !rxValid;
   }
 
   function calcDiscount(subtotal) {
@@ -566,8 +641,8 @@
     }
 
     const hasPrescriptionItem = cart.some(x => x.requiresPrescription);
-    if (hasPrescriptionItem && !prescriptionRef) {
-      showToast('Prescription reference required for Rx items', 'warning'); return;
+    if (hasPrescriptionItem && (!prescriptionRef || !currentRxRecord?.valid)) {
+      showToast('A valid prescription number is required for Rx items', 'warning'); return;
     }
 
     const btn = document.getElementById('checkout-btn');
@@ -598,9 +673,19 @@
         })
       ));
 
+      // Mark prescription as dispensed
+      if (currentRxRecord?.valid && currentRxRecord.docId) {
+        await updateDoc(doc(db, 'prescriptions', currentRxRecord.docId), {
+          status: 'dispensed',
+          dispensedAt: serverTimestamp(),
+          dispensedByTx: txRef.id,
+        });
+      }
+
       await logActivity(currentUser, 'transaction_completed', { txId: txRef.id, total });
 
       showReceipt({ id: txRef.id, ...txData });
+      currentRxRecord = null;
       cart = [];
       renderCart();
       await loadProducts();
@@ -642,6 +727,8 @@
     document.getElementById('discount-value').style.display = 'none';
     document.getElementById('cash-tendered').value = '';
     document.getElementById('prescription-ref').value = '';
+    document.getElementById('rx-lookup-result').hidden = true;
+    currentRxRecord = null;
     updateTotals();
   }
 
