@@ -125,7 +125,7 @@
       <div class="card__body table-responsive">
         <table class="table">
           <thead>
-            <tr><th>Txn #</th><th>Date / Time</th><th>Cashier</th><th>Items</th><th>Subtotal</th><th>Discount</th><th>Total</th><th>Payment</th></tr>
+            <tr><th>Txn #</th><th>Date / Time</th><th>Cashier</th><th>Items Purchased</th><th>Subtotal</th><th>Discount</th><th>Total</th><th>Payment</th></tr>
           </thead>
           <tbody id="txn-body"><tr><td colspan="8" class="text-center text-muted">Select a period and click Load</td></tr></tbody>
         </table>
@@ -213,18 +213,24 @@
   function renderTable() {
     const tbody = document.getElementById('txn-body');
     if (!allTxns.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No transactions</td></tr>'; return; }
-    tbody.innerHTML = allTxns.map(t => `
+    tbody.innerHTML = allTxns.map(t => {
+      const itemsList = (t.items || []).map(i => `
+        <div class="txn-item-row">
+          <span class="txn-item-name">${i.name}</span>
+          <span class="txn-item-qty">× ${i.qty}</span>
+        </div>`).join('');
+      return `
       <tr>
         <td><span class="font-mono text-sm">${t.id.slice(-8).toUpperCase()}</span></td>
         <td class="text-sm">${formatDate(t.createdAt)}</td>
         <td class="text-sm">${t.cashierName || '—'}</td>
-        <td>${t.items?.length || 0}</td>
+        <td><div class="txn-items-list">${itemsList || '—'}</div></td>
         <td>${formatPeso(t.subtotal)}</td>
         <td>${t.discountAmount > 0 ? formatPeso(t.discountAmount) : '—'}</td>
         <td class="font-bold">${formatPeso(t.total)}</td>
         <td><span class="badge badge--blue">${t.paymentMethod}</span></td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   }
 
   function renderCharts(from, to, period) {
@@ -279,12 +285,12 @@
       const d = ts?.toDate?.() || new Date(ts);
       return d.toLocaleDateString('en-PH') + ' ' + d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     };
-    const rows = [['Txn #','Date','Cashier','Items','Subtotal','Discount','Total','Payment']];
+    const rows = [['Txn #','Date','Cashier','Items Purchased','Subtotal','Discount','Total','Payment']];
     allTxns.forEach(t => rows.push([
       t.id.slice(-8).toUpperCase(),
       fmtDate(t.createdAt),
       t.cashierName || '',
-      t.items?.reduce((s, i) => s + i.qty, 0) || 0,
+      (t.items || []).map(i => `${i.name} x${i.qty}`).join('; '),
       (t.subtotal || 0).toFixed(2),
       (t.discountAmount || 0).toFixed(2),
       (t.total || 0).toFixed(2),

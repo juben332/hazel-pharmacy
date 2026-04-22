@@ -763,6 +763,12 @@ tbody tr:hover { background: #f8fafc; }
 .receipt__payment { text-align: center; margin-top: 10px; font-size: 0.78rem; color: var(--text-3); }
 .receipt__footer { text-align: center; margin-top: 14px; font-size: 0.78rem; color: var(--text-3); border-top: 1px dashed var(--border); padding-top: 12px; }
 
+/* Transaction log item list */
+.txn-items-list { display: flex; flex-direction: column; gap: 2px; }
+.txn-item-row { display: flex; align-items: baseline; gap: 6px; font-size: 0.8rem; }
+.txn-item-name { color: var(--text); font-weight: 500; }
+.txn-item-qty { color: var(--text-3); white-space: nowrap; font-family: var(--mono); font-size: 0.75rem; }
+
 /* Dashboard low stock list */
 .low-stock-list .low-stock-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .low-stock-list .low-stock-item:last-child { border-bottom: none; }
