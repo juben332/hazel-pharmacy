@@ -191,10 +191,23 @@
   let prescriptions = [];
   let currentUser = null;
 
-  requireAdminOrPharmacist(async user => {
+  requireAdminOrPharmacist(async (user, role) => {
     currentUser = user;
-    populateTopbar(user);
+    populateTopbar(user, role);
     document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();
+
+    // Hide all admin-only nav links for pharmacists — they only belong on this page
+    if (role === 'pharmacist') {
+      document.querySelectorAll('.sidebar__link').forEach(a => {
+        if (!a.href.includes('prescriptions') && !a.href.includes('pos.html')) a.closest('li, a').style.display = 'none';
+      });
+      // More reliable: hide every nav link except prescriptions and POS
+      document.querySelectorAll('.sidebar__nav .sidebar__link').forEach(a => {
+        const href = a.getAttribute('href') || '';
+        if (!href.includes('prescriptions') && !href.includes('pos.html')) a.style.display = 'none';
+      });
+    }
+
     await loadPrescriptions();
   });
 
