@@ -1,22 +1,30 @@
-import { auth } from './firebase-config.js';
+import { auth, isAdmin } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { isAdmin } from './firebase-config.js';
+import { db } from './firebase-config.js';
+import { collection, getDocs, query, where, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── Role lookup — checks Firestore staff collection ──────────────────────────
+export async function getUserRole(user) {
+  if (!user) return null;
+  if (isAdmin(user)) return 'admin'; // hardcoded owner is always admin
+  const snap = await getDocs(query(collection(db, 'staff'), where('email', '==', user.email)));
+  if (snap.empty) return 'cashier'; // unknown user defaults to cashier access
+  return snap.docs[0].data().role || 'cashier';
+}
 
 // ── Auth Guard ──────────────────────────────────────────────────────────────
 export function requireAuth(callback) {
   onAuthStateChanged(auth, user => {
-    if (!user) {
-      window.location.href = '/index.html';
-      return;
-    }
+    if (!user) { window.location.href = '/index.html'; return; }
     callback(user);
   });
 }
 
 export function requireAdmin(callback) {
-  onAuthStateChanged(auth, user => {
+  onAuthStateChanged(auth, async user => {
     if (!user) { window.location.href = '/index.html'; return; }
-    if (!isAdmin(user)) { window.location.href = '/pos.html'; return; }
+    const role = await getUserRole(user);
+    if (role !== 'admin') { window.location.href = '/pos.html'; return; }
     callback(user);
   });
 }
@@ -115,16 +123,17 @@ export function setActiveSidebarLink() {
 }
 
 // ── Topbar user info ─────────────────────────────────────────────────────────
-export function populateTopbar(user) {
+export function populateTopbar(user, role) {
   const nameEl = document.getElementById('topbar-name');
   const roleEl = document.getElementById('topbar-role');
   if (nameEl) nameEl.textContent = user.displayName || user.email.split('@')[0];
-  if (roleEl) roleEl.textContent = isAdmin(user) ? 'Administrator' : 'Cashier';
+  if (roleEl) {
+    const label = role ? role.charAt(0).toUpperCase() + role.slice(1) : (isAdmin(user) ? 'Administrator' : 'Cashier');
+    roleEl.textContent = label;
+  }
 }
 
 // ── Activity log helper ──────────────────────────────────────────────────────
-import { db } from './firebase-config.js';
-import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 export async function logActivity(user, action, details = {}) {
   try {

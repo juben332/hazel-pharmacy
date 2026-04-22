@@ -188,8 +188,8 @@
 <div id="toast-container" class="toast-container"></div>
 
 <script type="module">
-  import { auth, db, isAdmin } from '/js/firebase-config.js';
-  import { requireAuth, handleSignOut, showToast, formatPeso, formatDate, logActivity, populateTopbar } from '/js/main.js';
+  import { auth, db } from '/js/firebase-config.js';
+  import { requireAuth, handleSignOut, showToast, formatPeso, formatDate, logActivity, populateTopbar, getUserRole } from '/js/main.js';
   import {
     collection, getDocs, addDoc, updateDoc, doc, query, where, orderBy, limit, serverTimestamp
   } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -203,9 +203,10 @@
 
   requireAuth(async user => {
     currentUser = user;
-    populateTopbar(user);
+    const role = await getUserRole(user);
+    populateTopbar(user, role);
     setAvatar(user);
-    if (isAdmin(user)) document.getElementById('admin-nav').removeAttribute('hidden');
+    if (role === 'admin') document.getElementById('admin-nav').removeAttribute('hidden');
     await Promise.all([loadProducts(), loadCustomers()]);
     setTopbarDate();
     setupQuickCash();

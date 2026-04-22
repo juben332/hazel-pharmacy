@@ -50,14 +50,15 @@
   <script type="module">
     import { auth } from '/js/firebase-config.js';
     import { signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { isAdmin } from '/js/firebase-config.js';
+    import { getUserRole } from '/js/main.js';
 
-    onAuthStateChanged(auth, user => {
-      if (user) redirect(user);
+    onAuthStateChanged(auth, async user => {
+      if (user) await redirect(user);
     });
 
-    function redirect(user) {
-      window.location.href = isAdmin(user) ? '/admin/index.html' : '/pos.html';
+    async function redirect(user) {
+      const role = await getUserRole(user);
+      window.location.href = role === 'admin' ? '/admin/index.html' : '/pos.html';
     }
 
     const form     = document.getElementById('login-form');
