@@ -116,7 +116,11 @@
           <select class="form-control form-control--sm" id="customer-select">
             <option value="">Walk-in Customer</option>
           </select>
-          <input class="form-control form-control--sm" type="text" id="prescription-ref" placeholder="Rx # (optional)" />
+          <input class="form-control form-control--sm" type="text" id="prescription-ref" placeholder="Rx # (required for Rx items)" />
+          <div class="rx-warning" id="rx-warning" hidden>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Cart has Rx items — enter prescription number above to proceed.
+          </div>
         </div>
 
         <div class="pos-cart__items" id="cart-items">
@@ -462,6 +466,8 @@
     updateCardStates();
   });
 
+  document.getElementById('prescription-ref').addEventListener('input', updateTotals);
+
   // ── Totals ─────────────────────────────────────────────────────────────────
   function updateTotals() {
     const subtotal = cart.reduce((sum, x) => sum + x.price * x.qty, 0);
@@ -478,7 +484,17 @@
     document.getElementById('fab-total').textContent = formatPeso(total);
 
     updateChange(total);
-    document.getElementById('checkout-btn').disabled = cart.length === 0 || total <= 0;
+
+    const hasRxItem = cart.some(x => x.requiresPrescription);
+    const rxRef = document.getElementById('prescription-ref').value.trim();
+    const rxInput = document.getElementById('prescription-ref');
+    const rxWarning = document.getElementById('rx-warning');
+
+    rxWarning.hidden = !hasRxItem;
+    rxInput.classList.toggle('form-control--rx-required', hasRxItem && !rxRef);
+
+    document.getElementById('checkout-btn').disabled =
+      cart.length === 0 || total <= 0 || (hasRxItem && !rxRef);
   }
 
   function calcDiscount(subtotal) {

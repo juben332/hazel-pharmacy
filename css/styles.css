@@ -763,6 +763,11 @@ tbody tr:hover { background: #f8fafc; }
 .receipt__payment { text-align: center; margin-top: 10px; font-size: 0.78rem; color: var(--text-3); }
 .receipt__footer { text-align: center; margin-top: 14px; font-size: 0.78rem; color: var(--text-3); border-top: 1px dashed var(--border); padding-top: 12px; }
 
+/* Rx warning in cart */
+.rx-warning { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 500; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; padding: 6px 10px; margin-top: 6px; }
+.form-control--rx-required { border-color: #f59e0b !important; background: #fffbeb !important; }
+.form-control--rx-required:focus { box-shadow: 0 0 0 3px rgba(245,158,11,0.2) !important; }
+
 /* Transaction log item list */
 .txn-items-list { display: flex; flex-direction: column; gap: 2px; }
 .txn-item-row { display: flex; align-items: baseline; gap: 6px; font-size: 0.8rem; }
