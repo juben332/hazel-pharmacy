@@ -186,6 +186,7 @@
       from = new Date(document.getElementById('range-from').value);
       to = new Date(document.getElementById('range-to').value); to.setHours(23,59,59,999);
       if (!from || !to || isNaN(from) || isNaN(to)) { showToast('Select a valid date range', 'error'); return; }
+      if (from > to) { showToast('Start date must be before end date', 'error'); return; }
     }
 
     const snap = await getDocs(query(

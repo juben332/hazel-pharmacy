@@ -983,3 +983,25 @@ tbody tr:hover { background: #f8fafc; }
   .pos-product-card__stock { font-size: 0.56rem; }
 }
 
+/* ============================================================
+   PRINT — clean receipt output
+   ============================================================ */
+@media print {
+  .sidebar, .sidebar-overlay, .topbar, .pos-left, .pos-cart-overlay,
+  .pos-cart-fab, .modal__overlay, .modal__footer, .toast-container,
+  .page-body, .main-content > header { display: none !important; }
+  body, .main-content { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  .modal { position: static !important; background: none !important; padding: 0 !important; display: block !important; backdrop-filter: none !important; }
+  .modal__box { box-shadow: none !important; max-width: 100% !important; border: none !important; animation: none !important; }
+  .receipt { font-size: 0.9rem; max-width: 340px; margin: 0 auto; }
+}
+
+/* Expiry row indicators in inventory table */
+.row--expired { background: #fef2f2 !important; }
+.row--expiring { background: #fffbeb !important; }
+.badge--expiring { background: #f59e0b; color: #fff; }
+.badge--expired-tag { background: #ef4444; color: #fff; }
+
+/* Allergy warning in POS cart */
+.allergy-warning { display: flex; align-items: flex-start; gap: 7px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: 8px 10px; margin-top: 8px; font-size: 0.78rem; color: #991b1b; font-weight: 500; }
+

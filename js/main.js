@@ -8,15 +8,19 @@ export async function getUserRole(user) {
   if (!user) return null;
   if (isAdmin(user)) return 'admin'; // hardcoded owner is always admin
   const snap = await getDocs(query(collection(db, 'staff'), where('email', '==', user.email)));
-  if (snap.empty) return 'cashier'; // unknown user defaults to cashier access
-  return snap.docs[0].data().role || 'cashier';
+  if (snap.empty) return null; // not in staff collection = no access
+  const staffDoc = snap.docs[0].data();
+  if (staffDoc.status === 'inactive') return null; // blocked accounts
+  return staffDoc.role || 'cashier';
 }
 
 // ── Auth Guard ──────────────────────────────────────────────────────────────
 export function requireAuth(callback) {
-  onAuthStateChanged(auth, user => {
+  onAuthStateChanged(auth, async user => {
     if (!user) { window.location.href = '/index.html'; return; }
-    callback(user);
+    const role = await getUserRole(user);
+    if (!role) { await signOut(auth); window.location.href = '/index.html'; return; }
+    callback(user, role);
   });
 }
 
@@ -25,7 +29,17 @@ export function requireAdmin(callback) {
     if (!user) { window.location.href = '/index.html'; return; }
     const role = await getUserRole(user);
     if (role !== 'admin') { window.location.href = '/pos.html'; return; }
-    callback(user);
+    callback(user, role);
+  });
+}
+
+// Allows both admins and pharmacists (e.g. prescriptions page)
+export function requireAdminOrPharmacist(callback) {
+  onAuthStateChanged(auth, async user => {
+    if (!user) { window.location.href = '/index.html'; return; }
+    const role = await getUserRole(user);
+    if (role !== 'admin' && role !== 'pharmacist') { window.location.href = '/pos.html'; return; }
+    callback(user, role);
   });
 }
 

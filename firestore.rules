@@ -10,11 +10,12 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Products — signed-in users can read and update stock, only admin can add/delete
+    // Products — signed-in users can read; only stock/updatedAt writable by non-admins
     match /products/{id} {
       allow read: if isSignedIn();
-      allow update: if isSignedIn();
       allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+        (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'updatedAt']));
     }
 
     // Transactions — cashier can create, admin reads all, cashier reads own

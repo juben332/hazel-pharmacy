@@ -185,13 +185,13 @@
 
 <script type="module">
   import { db } from '/js/firebase-config.js';
-  import { requireAdmin, handleSignOut, showToast, formatDate, formatDateShort, logActivity, populateTopbar } from '/js/main.js';
+  import { requireAdminOrPharmacist, handleSignOut, showToast, formatDate, formatDateShort, logActivity, populateTopbar } from '/js/main.js';
   import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   let prescriptions = [];
   let currentUser = null;
 
-  requireAdmin(async user => {
+  requireAdminOrPharmacist(async user => {
     currentUser = user;
     populateTopbar(user);
     document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();

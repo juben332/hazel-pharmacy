@@ -36,6 +36,9 @@
 
       <p id="login-error" class="login-card__error" hidden></p>
 
+      <div style="text-align:right;margin-top:-4px;margin-bottom:8px">
+        <button type="button" class="btn btn--ghost btn--sm" id="forgot-pw-btn" style="font-size:0.8rem;padding:2px 6px">Forgot password?</button>
+      </div>
       <button type="submit" class="btn btn--primary btn--full" id="login-btn">
         <span id="btn-text">Sign In</span>
         <span id="btn-spinner" class="btn-spinner" hidden></span>
@@ -49,7 +52,7 @@
 
   <script type="module">
     import { auth } from '/js/firebase-config.js';
-    import { signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { signInWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { getUserRole } from '/js/main.js';
 
     onAuthStateChanged(auth, async user => {
@@ -73,6 +76,21 @@
       const show = pwEl.type === 'password';
       pwEl.type = show ? 'text' : 'password';
       togglePw.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+
+    document.getElementById('forgot-pw-btn').addEventListener('click', async () => {
+      const email = emailEl.value.trim();
+      if (!email) { errorEl.textContent = 'Enter your email address first.'; errorEl.hidden = false; return; }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        errorEl.style.color = '#16a34a';
+        errorEl.textContent = 'Password reset email sent! Check your inbox.';
+        errorEl.hidden = false;
+      } catch (err) {
+        errorEl.style.color = '';
+        errorEl.textContent = 'Could not send reset email. Check the address and try again.';
+        errorEl.hidden = false;
+      }
     });
 
     form.addEventListener('submit', async e => {

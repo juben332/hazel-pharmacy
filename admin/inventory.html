@@ -241,20 +241,32 @@
       return true;
     });
 
+    const today = new Date().toISOString().slice(0,10);
+    const in30 = new Date(); in30.setDate(in30.getDate() + 30);
+    const in30str = in30.toISOString().slice(0,10);
+
     const tbody = document.getElementById('product-body');
     if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No products found</td></tr>'; return; }
     tbody.innerHTML = list.map(p => {
       const isLow = p.stock <= (p.lowStockThreshold || 10) && p.stock > 0;
       const isOut = p.stock === 0;
       const stockBadge = isOut ? '<span class="badge badge--red">Out</span>' : isLow ? `<span class="badge badge--yellow">${p.stock}</span>` : `<span class="badge badge--green">${p.stock}</span>`;
-      return `<tr>
+      const expired = p.expiryDate && p.expiryDate < today;
+      const expiring = p.expiryDate && !expired && p.expiryDate <= in30str;
+      const expiryDisplay = p.expiryDate
+        ? (expired ? `<span class="badge badge--expired-tag">EXPIRED ${p.expiryDate}</span>`
+          : expiring ? `<span class="badge badge--expiring">${p.expiryDate}</span>`
+          : `<span class="text-sm">${p.expiryDate}</span>`)
+        : '—';
+      const rowClass = expired ? 'row--expired' : expiring ? 'row--expiring' : '';
+      return `<tr class="${rowClass}">
         <td><strong>${p.name}</strong>${p.description ? `<br/><small class="text-muted">${p.description}</small>` : ''}</td>
         <td>${p.category || '—'}</td>
         <td>${formatPeso(p.price)}</td>
         <td>${stockBadge}</td>
         <td>${p.lowStockThreshold || 10}</td>
         <td>${p.requiresPrescription ? '<span class="badge badge--blue">Rx</span>' : '—'}</td>
-        <td class="text-sm">${p.expiryDate || '—'}</td>
+        <td>${expiryDisplay}</td>
         <td>
           <div class="action-btns">
             <button class="btn btn--ghost btn--sm" onclick="editProduct('${p.id}')">Edit</button>

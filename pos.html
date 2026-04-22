@@ -24,6 +24,14 @@
       <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
       POS / Cashier
     </a>
+    <!-- Pharmacist links — shown for pharmacist role -->
+    <div id="pharmacist-nav" hidden>
+      <div class="sidebar__divider">Pharmacist</div>
+      <a href="/admin/prescriptions.html" class="sidebar__link">
+        <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Prescriptions
+      </a>
+    </div>
     <!-- Admin-only links — shown via JS when user is admin -->
     <div id="admin-nav" hidden>
       <div class="sidebar__divider">Admin</div>
@@ -116,6 +124,10 @@
           <select class="form-control form-control--sm" id="customer-select">
             <option value="">Walk-in Customer</option>
           </select>
+          <div class="allergy-warning" id="allergy-warning" hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span id="allergy-text"></span>
+          </div>
           <input class="form-control form-control--sm" type="text" id="prescription-ref" placeholder="Rx # (required for Rx items)" />
           <div class="rx-warning" id="rx-warning" hidden>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -212,6 +224,7 @@
     populateTopbar(user, role);
     setAvatar(user);
     if (role === 'admin') document.getElementById('admin-nav').removeAttribute('hidden');
+    if (role === 'pharmacist') document.getElementById('pharmacist-nav').removeAttribute('hidden');
     await Promise.all([loadProducts(), loadCustomers()]);
     setTopbarDate();
     setupQuickCash();
@@ -319,8 +332,19 @@
     customers.forEach(c => {
       const o = document.createElement('option');
       o.value = c.id;
-      o.textContent = `${c.name} — ${c.phone || ''}`;
+      o.textContent = `${c.name}${c.type === 'senior' ? ' (Senior/PWD)' : ''} — ${c.phone || ''}`;
       sel.appendChild(o);
+    });
+    sel.addEventListener('change', () => {
+      const c = customers.find(x => x.id === sel.value);
+      const warningEl = document.getElementById('allergy-warning');
+      const textEl = document.getElementById('allergy-text');
+      if (c?.notes) {
+        textEl.textContent = 'Allergy/Notes: ' + c.notes;
+        warningEl.hidden = false;
+      } else {
+        warningEl.hidden = true;
+      }
     });
   }
 
@@ -719,6 +743,7 @@
         <div class="receipt__row"><span>Cash</span><span>${formatPeso(tx.cashTendered)}</span></div>
         <div class="receipt__row"><span>Change</span><span>${formatPeso(tx.changeDue)}</span></div>` : ''}
       <div class="receipt__payment">Payment: ${tx.paymentMethod.toUpperCase()}</div>
+      ${tx.prescriptionRef ? `<div class="receipt__payment" style="margin-top:6px;color:#1d4ed8">Rx # ${tx.prescriptionRef}${currentRxRecord?.rx?.patientName ? ' · ' + currentRxRecord.rx.patientName : ''}</div>` : ''}
       <div class="receipt__footer">Thank you for your purchase!<br/>Cashier: ${tx.cashierName}</div>
     `;
     document.getElementById('receipt-modal').classList.add('modal--open');
