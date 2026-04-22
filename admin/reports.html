@@ -274,19 +274,24 @@
 
   document.getElementById('export-csv-btn').addEventListener('click', () => {
     if (!allTxns.length) { showToast('No data to export', 'warning'); return; }
+    const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const fmtDate = ts => {
+      const d = ts?.toDate?.() || new Date(ts);
+      return d.toLocaleDateString('en-PH') + ' ' + d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
     const rows = [['Txn #','Date','Cashier','Items','Subtotal','Discount','Total','Payment']];
     allTxns.forEach(t => rows.push([
       t.id.slice(-8).toUpperCase(),
-      (t.createdAt?.toDate?.() || new Date(t.createdAt)).toLocaleString('en-PH'),
+      fmtDate(t.createdAt),
       t.cashierName || '',
-      t.items?.length || 0,
-      t.subtotal?.toFixed(2),
-      t.discountAmount?.toFixed(2) || 0,
-      t.total?.toFixed(2),
-      t.paymentMethod,
+      t.items?.reduce((s, i) => s + i.qty, 0) || 0,
+      (t.subtotal || 0).toFixed(2),
+      (t.discountAmount || 0).toFixed(2),
+      (t.total || 0).toFixed(2),
+      t.paymentMethod || '',
     ]));
-    const csv = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const csv = rows.map(r => r.map(q).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `hazel-sales-${new Date().toISOString().slice(0,10)}.csv`;
