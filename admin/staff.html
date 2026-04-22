@@ -71,11 +71,6 @@
   </header>
 
   <div class="page-body">
-    <div class="info-banner">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Staff accounts must be created in <strong>Firebase Authentication</strong> first. Use this section to store their profile and role information.
-    </div>
-
     <div class="card">
       <div class="card__header">
         <input class="form-control" type="text" id="search-input" placeholder="Search staff…" style="max-width:300px" />
@@ -107,8 +102,12 @@
         <input class="form-control" type="text" id="f-sname" required />
       </div>
       <div class="form-group">
-        <label class="form-label">Email (Firebase Auth) *</label>
+        <label class="form-label">Email *</label>
         <input class="form-control" type="email" id="f-semail" required />
+      </div>
+      <div class="form-group" id="pw-group">
+        <label class="form-label">Password * <span style="font-weight:400;color:var(--text-3)">(min 6 characters)</span></label>
+        <input class="form-control" type="password" id="f-spw" placeholder="Set login password" />
       </div>
       <div class="form-group">
         <label class="form-label">Role</label>
@@ -145,8 +144,21 @@
 
 <script type="module">
   import { db } from '/js/firebase-config.js';
-  import { requireAdmin, handleSignOut, showToast, formatDate, logActivity, populateTopbar } from '/js/main.js';
+  import { requireAdmin, handleSignOut, showToast, formatDate, populateTopbar } from '/js/main.js';
   import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+  // Secondary app — used to create auth accounts without signing the admin out
+  const secondaryApp = initializeApp({
+    apiKey: "AIzaSyB-FGDzEVf4ROxJZ33Bd40VK2s6H-cXr0Y",
+    authDomain: "hazel-pharmacy-ph.firebaseapp.com",
+    projectId: "hazel-pharmacy-ph",
+    storageBucket: "hazel-pharmacy-ph.firebasestorage.app",
+    messagingSenderId: "195661486512",
+    appId: "1:195661486512:web:4365d70238382e93659e75"
+  }, 'staff-creator');
+  const secondaryAuth = getAuth(secondaryApp);
 
   let staffList = [];
   let currentUser = null;
@@ -205,46 +217,80 @@
   document.getElementById('cancel-staff-modal').addEventListener('click', closeModal);
 
   function openModal(s = null) {
-    document.getElementById('staff-modal-title').textContent = s ? 'Edit Staff' : 'Add Staff';
+    const isEdit = !!s;
+    document.getElementById('staff-modal-title').textContent = isEdit ? 'Edit Staff' : 'Add Staff';
     document.getElementById('staff-id').value = s?.id || '';
     document.getElementById('f-sname').value = s?.name || '';
     document.getElementById('f-semail').value = s?.email || '';
+    document.getElementById('f-semail').disabled = isEdit;
     document.getElementById('f-srole').value = s?.role || 'cashier';
     document.getElementById('f-sphone').value = s?.phone || '';
     document.getElementById('f-sstatus').value = s?.status || 'active';
     document.getElementById('f-snotes').value = s?.notes || '';
+    document.getElementById('f-spw').value = '';
+    document.getElementById('pw-group').style.display = isEdit ? 'none' : '';
     document.getElementById('staff-modal').classList.add('modal--open');
   }
 
-  function closeModal() { document.getElementById('staff-modal').classList.remove('modal--open'); }
+  function closeModal() {
+    document.getElementById('staff-modal').classList.remove('modal--open');
+    document.getElementById('f-semail').disabled = false;
+  }
 
   window.editStaff = id => { const s = staffList.find(x => x.id === id); if (s) openModal(s); };
 
   document.getElementById('save-staff-btn').addEventListener('click', async () => {
     const id = document.getElementById('staff-id').value;
-    const data = {
-      name: document.getElementById('f-sname').value.trim(),
-      email: document.getElementById('f-semail').value.trim().toLowerCase(),
-      role: document.getElementById('f-srole').value,
-      phone: document.getElementById('f-sphone').value.trim(),
+    const name  = document.getElementById('f-sname').value.trim();
+    const email = document.getElementById('f-semail').value.trim().toLowerCase();
+    const pw    = document.getElementById('f-spw').value;
+    const data  = {
+      name,
+      email,
+      role:   document.getElementById('f-srole').value,
+      phone:  document.getElementById('f-sphone').value.trim(),
       status: document.getElementById('f-sstatus').value,
-      notes: document.getElementById('f-snotes').value.trim(),
+      notes:  document.getElementById('f-snotes').value.trim(),
       updatedAt: serverTimestamp(),
     };
-    if (!data.name || !data.email) { showToast('Name and email are required', 'error'); return; }
+
+    if (!name || !email) { showToast('Name and email are required', 'error'); return; }
+
+    const saveBtn = document.getElementById('save-staff-btn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+
     try {
       if (id) {
+        // Edit — update Firestore only
         await updateDoc(doc(db, 'staff', id), data);
         showToast('Staff updated');
       } else {
+        // Add — create Firebase Auth account first, then save profile
+        if (!pw || pw.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
+        const cred = await createUserWithEmailAndPassword(secondaryAuth, email, pw);
+        await updateProfile(cred.user, { displayName: name });
+        await signOut(secondaryAuth);
+
         data.createdAt = serverTimestamp();
-        data.addedBy = currentUser.uid;
+        data.addedBy   = currentUser.uid;
+        data.uid       = cred.user.uid;
         await addDoc(collection(db, 'staff'), data);
-        showToast('Staff added');
+        showToast('Staff account created and saved');
       }
       closeModal();
       await loadStaff();
-    } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+    } catch (err) {
+      const msgs = {
+        'auth/email-already-in-use': 'That email already has a Firebase account.',
+        'auth/invalid-email':        'Invalid email address.',
+        'auth/weak-password':        'Password is too weak (min 6 characters).',
+      };
+      showToast(msgs[err.code] || err.message, 'error');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
   });
 </script>
 </body>
