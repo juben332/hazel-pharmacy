@@ -470,7 +470,7 @@
           <span class="badge badge--blue">${t.paymentMethod}</span>
           ${t.hasReturn ? '<br/><span class="badge badge--red" style="margin-top:4px">↩ Returned</span>' : ''}
         </td>
-        <td><button class="btn btn--outline btn--sm" style="white-space:nowrap;color:#dc2626;border-color:#dc2626" onclick="openReturnModal('${t.id}')">${t.hasReturn ? '↩ More' : '↩ Return'}</button></td>
+        <td>${t.hasReturn ? '' : `<button class="btn btn--outline btn--sm" style="white-space:nowrap;color:#dc2626;border-color:#dc2626" onclick="openReturnModal('${t.id}')">↩ Return</button>`}</td>
       </tr>`;
     }).join('');
   }
