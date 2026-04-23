@@ -1005,3 +1005,12 @@ tbody tr:hover { background: #f8fafc; }
 /* Allergy warning in POS cart */
 .allergy-warning { display: flex; align-items: flex-start; gap: 7px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: 8px 10px; margin-top: 8px; font-size: 0.78rem; color: #991b1b; font-weight: 500; }
 
+/* Report view tabs */
+.report-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+.report-tab { background: none; border: none; padding: 8px 20px; font-size: 0.875rem; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; border-radius: 4px 4px 0 0; transition: color 0.15s; }
+.report-tab:hover { color: #1d4ed8; }
+.report-tab--active { color: #1d4ed8; border-bottom-color: #1d4ed8; background: #eff6ff; }
+
+/* Product sales report category header rows */
+.product-report-category td { background: #1d4ed8; color: #fff; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.04em; padding: 8px 12px; }
+
