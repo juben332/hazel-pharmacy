@@ -161,11 +161,10 @@
                 <th style="text-align:right">COST (Buy)</th>
                 <th style="text-align:right">TOTAL SALES</th>
                 <th style="text-align:right">PROFIT</th>
-                <th></th>
               </tr>
             </thead>
             <tbody id="product-report-body">
-              <tr><td colspan="9" class="text-center text-muted">Select a period and click Load</td></tr>
+              <tr><td colspan="8" class="text-center text-muted">Select a period and click Load</td></tr>
             </tbody>
           </table>
         </div>
@@ -396,7 +395,7 @@
   function renderProductReport() {
     const tbody = document.getElementById('product-report-body');
     if (!allProducts.length) {
-      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No products found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No products found</td></tr>';
       return;
     }
 
@@ -419,7 +418,7 @@
 
     const rows = [];
     Object.keys(groups).sort().forEach(cat => {
-      rows.push(`<tr class="product-report-category"><td colspan="9">${cat.toUpperCase()}</td></tr>`);
+      rows.push(`<tr class="product-report-category"><td colspan="8">${cat.toUpperCase()}</td></tr>`);
       groups[cat].sort((a, b) => (a.name || '').localeCompare(b.name || '')).forEach(p => {
         const soldKey = p.id || p.name;
         const sold = soldMap[soldKey] || 0;
@@ -430,7 +429,12 @@
         const totalSales = sold * srp;
         const profit = sold * (srp - cost);
         rows.push(`<tr>
-          <td style="padding-left:1.5rem">${p.name || '—'}</td>
+          <td style="padding-left:1.5rem">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>${p.name || '—'}</span>
+              <button class="btn btn--ghost btn--sm" style="flex-shrink:0;font-size:0.7rem;padding:2px 8px" onclick="openEditProduct('${p.id}')">✏ Edit</button>
+            </div>
+          </td>
           <td style="text-align:right">${beginning}</td>
           <td style="text-align:right">${sold}</td>
           <td style="text-align:right">${remaining}</td>
@@ -438,7 +442,6 @@
           <td style="text-align:right">${formatPeso(cost)}</td>
           <td style="text-align:right">${formatPeso(totalSales)}</td>
           <td style="text-align:right">${formatPeso(profit)}</td>
-          <td><button class="btn btn--ghost btn--sm" onclick="openEditProduct('${p.id}')">Edit</button></td>
         </tr>`);
       });
     });
