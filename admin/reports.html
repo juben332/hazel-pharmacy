@@ -427,18 +427,27 @@
 
     const wb = XLSX.utils.book_new();
     const wsData = [];
+    const categoryRows = [];  // 0-based row indices of category header rows
+    const emptyRows = [];     // 0-based row indices of blank separator rows
 
-    // Title row
+    // Row 1: Title
     wsData.push([currentPeriodLabel, '', '', '', '', '', '', '']);
-    // Header row
-    wsData.push(['PRODUCT','STOCKS (BEGINNING)','SOLD','STOCKS (REMAINING)','SRP (Sell)','COST (Buy)','TOTAL SALES','PROFIT']);
+    // Row 2: blank
+    wsData.push(['', '', '', '', '', '', '', '']);
+    // Row 3: Column headers
+    wsData.push(['PRODUCT','STOCKS(BEGINNING)','SOLD','STOCKS(REMAINING)','SRP(Sell)','COST(Buy)','TOTAL SALES','PROFIT']);
 
-    const categoryRows = [];   // track row indices of category rows (0-based)
-    const headerRow = 1;       // row index of header
-
-    Object.keys(groups).sort().forEach(cat => {
+    const sortedCats = Object.keys(groups).sort();
+    sortedCats.forEach((cat, catIndex) => {
+      // Blank separator before each category (except first)
+      if (catIndex > 0) {
+        emptyRows.push(wsData.length);
+        wsData.push(['', '', '', '', '', '', '', '']);
+      }
+      // Category header row
       categoryRows.push(wsData.length);
       wsData.push([cat.toUpperCase(), '', '', '', '', '', '', '']);
+      // Product rows
       groups[cat].sort((a, b) => (a.name || '').localeCompare(b.name || '')).forEach(p => {
         const soldKey = p.id || p.name;
         const sold = soldMap[soldKey] || 0;
@@ -454,35 +463,36 @@
 
     // Column widths
     ws['!cols'] = [
-      { wch: 35 }, // PRODUCT
-      { wch: 18 }, // STOCKS (BEGINNING)
+      { wch: 30 }, // PRODUCT
+      { wch: 18 }, // STOCKS(BEGINNING)
       { wch: 8  }, // SOLD
-      { wch: 18 }, // STOCKS (REMAINING)
-      { wch: 12 }, // SRP
-      { wch: 12 }, // COST
+      { wch: 18 }, // STOCKS(REMAINING)
+      { wch: 12 }, // SRP(Sell)
+      { wch: 12 }, // COST(Buy)
       { wch: 14 }, // TOTAL SALES
       { wch: 12 }, // PROFIT
     ];
 
-    // Style: title row — bold, large
-    const titleCell = ws['A1'];
-    if (titleCell) titleCell.s = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'left' } };
+    const cols = ['A','B','C','D','E','F','G','H'];
 
-    // Style: header row — bold, blue bg, white text
-    const headers = ['A','B','C','D','E','F','G','H'];
-    headers.forEach(col => {
-      const cell = ws[`${col}2`];
+    // Row 1: Title — bold, larger font
+    const titleCell = ws['A1'];
+    if (titleCell) titleCell.s = { font: { bold: true, sz: 13 } };
+
+    // Row 3: Header — bold, light blue bg, dark text, centered
+    cols.forEach(col => {
+      const cell = ws[`${col}3`];
       if (cell) cell.s = {
-        font: { bold: true, color: { rgb: 'FFFFFF' } },
-        fill: { fgColor: { rgb: '1D4ED8' } },
+        font: { bold: true },
+        fill: { fgColor: { rgb: 'BDD7EE' } },
         alignment: { horizontal: col === 'A' ? 'left' : 'center' },
       };
     });
 
-    // Style: category rows — bold, blue bg, white text
+    // Category rows — bold, blue bg, white text
     categoryRows.forEach(ri => {
       const xlRow = ri + 1; // 1-based
-      headers.forEach(col => {
+      cols.forEach(col => {
         const addr = `${col}${xlRow}`;
         if (!ws[addr]) ws[addr] = { t: 's', v: '' };
         ws[addr].s = {
