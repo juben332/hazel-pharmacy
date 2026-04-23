@@ -305,6 +305,7 @@
   let chartRef = null;
   let payChartRef = null;
   let currentPeriodLabel = 'WEEKLY REPORT';
+  let currentUser = null;
 
   // Tab switching
   const tabTxn = document.getElementById('tab-txn');
@@ -327,6 +328,7 @@
   });
 
   requireAdmin(async user => {
+    currentUser = user;
     populateTopbar(user);
     document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();
     loadReport();
