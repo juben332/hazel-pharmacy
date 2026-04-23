@@ -230,6 +230,7 @@
   });
 
   async function loadReport() {
+    try {
     const period = document.getElementById('report-period').value;
     const now = new Date();
     let from, to;
@@ -273,9 +274,8 @@
     renderSummary();
     renderTable();
     renderCharts(from, to, period);
-
-    // Always refresh product report data; render only if that tab is active
-    if (tabProduct.classList.contains('report-tab--active')) renderProductReport();
+    renderProductReport();
+    } catch(err) { showToast('Failed to load report: ' + err.message, 'error'); console.error(err); }
   }
 
   function renderSummary() {
