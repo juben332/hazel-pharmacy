@@ -35,7 +35,7 @@
     </a>
     <a href="/admin/customers.html" class="sidebar__link">
       <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      Customers
+      Supplier
     </a>
     <a href="/admin/reports.html" class="sidebar__link">
       <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -131,6 +131,10 @@
         <div class="form-group">
           <label class="form-label">Clinic / Hospital</label>
           <input class="form-control" type="text" id="f-clinic" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Supplier Name</label>
+          <input class="form-control" type="text" id="f-supplier" placeholder="e.g. Unilab, Generika" />
         </div>
         <div class="form-group">
           <label class="form-label">Date Issued</label>
@@ -275,6 +279,7 @@
     document.getElementById('f-patient').value = rx?.patientName || '';
     document.getElementById('f-doctor').value = rx?.doctor || '';
     document.getElementById('f-clinic').value = rx?.clinic || '';
+    document.getElementById('f-supplier').value = rx?.supplierName || '';
     document.getElementById('f-issued').value = rx?.dateIssued || '';
     document.getElementById('f-valid').value = rx?.validUntil || '';
     document.getElementById('f-status').value = rx?.status || 'pending';
@@ -296,6 +301,7 @@
         <dt>Patient</dt><dd>${rx.patientName || '—'}</dd>
         <dt>Doctor</dt><dd>${rx.doctor || '—'}</dd>
         <dt>Clinic</dt><dd>${rx.clinic || '—'}</dd>
+        <dt>Supplier</dt><dd>${rx.supplierName || '—'}</dd>
         <dt>Date Issued</dt><dd>${rx.dateIssued || '—'}</dd>
         <dt>Valid Until</dt><dd>${rx.validUntil || '—'}</dd>
         <dt>Status</dt><dd>${rx.status}</dd>
@@ -317,6 +323,7 @@
       patientName: document.getElementById('f-patient').value.trim(),
       doctor: document.getElementById('f-doctor').value.trim(),
       clinic: document.getElementById('f-clinic').value.trim(),
+      supplierName: document.getElementById('f-supplier').value.trim(),
       dateIssued: document.getElementById('f-issued').value,
       validUntil: document.getElementById('f-valid').value,
       status: document.getElementById('f-status').value,
