@@ -76,6 +76,7 @@
         <div class="search-filter-row">
           <input class="form-control" type="text" id="search-input" placeholder="Search products…" />
           <select class="form-control" id="category-filter"><option value="">All Categories</option></select>
+          <select class="form-control" id="supplier-filter"><option value="">All Suppliers</option></select>
           <select class="form-control" id="stock-filter">
             <option value="">All Stock Levels</option>
             <option value="low">Low Stock</option>
@@ -89,6 +90,7 @@
             <tr>
               <th>Product Name</th>
               <th>Category</th>
+              <th>Supplier</th>
               <th>Price</th>
               <th>Stock</th>
               <th>Threshold</th>
@@ -97,7 +99,7 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="product-body"><tr><td colspan="8" class="text-center text-muted">Loading…</td></tr></tbody>
+          <tbody id="product-body"><tr><td colspan="9" class="text-center text-muted">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -219,6 +221,7 @@
     const snap = await getDocs(collection(db, 'products'));
     products = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.name?.localeCompare(b.name));
     buildCategoryFilter();
+    buildSupplierFilter();
     renderTable();
   }
 
@@ -228,14 +231,22 @@
     sel.innerHTML = '<option value="">All Categories</option>' + cats.map(c => `<option>${c}</option>`).join('');
   }
 
+  function buildSupplierFilter() {
+    const suppliers = [...new Set(products.map(p => p.supplier).filter(Boolean))].sort();
+    const sel = document.getElementById('supplier-filter');
+    sel.innerHTML = '<option value="">All Suppliers</option>' + suppliers.map(s => `<option>${s}</option>`).join('');
+  }
+
   function renderTable() {
     const search = document.getElementById('search-input').value.toLowerCase();
     const cat = document.getElementById('category-filter').value;
+    const supplierF = document.getElementById('supplier-filter').value;
     const stockF = document.getElementById('stock-filter').value;
 
     let list = products.filter(p => {
       if (search && !p.name?.toLowerCase().includes(search)) return false;
       if (cat && p.category !== cat) return false;
+      if (supplierF && p.supplier !== supplierF) return false;
       if (stockF === 'low' && !(p.stock > 0 && p.stock <= (p.lowStockThreshold || 10))) return false;
       if (stockF === 'out' && p.stock !== 0) return false;
       return true;
@@ -246,7 +257,7 @@
     const in30str = in30.toISOString().slice(0,10);
 
     const tbody = document.getElementById('product-body');
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No products found</td></tr>'; return; }
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No products found</td></tr>'; return; }
     tbody.innerHTML = list.map(p => {
       const isLow = p.stock <= (p.lowStockThreshold || 10) && p.stock > 0;
       const isOut = p.stock === 0;
@@ -262,6 +273,7 @@
       return `<tr class="${rowClass}">
         <td><strong>${p.name}</strong>${p.description ? `<br/><small class="text-muted">${p.description}</small>` : ''}</td>
         <td>${p.category || '—'}</td>
+        <td>${p.supplier || '—'}</td>
         <td>${formatPeso(p.price)}</td>
         <td>${stockBadge}</td>
         <td>${p.lowStockThreshold || 10}</td>
@@ -277,7 +289,7 @@
     }).join('');
   }
 
-  ['search-input','category-filter','stock-filter'].forEach(id =>
+  ['search-input','category-filter','supplier-filter','stock-filter'].forEach(id =>
     document.getElementById(id).addEventListener('input', renderTable)
   );
 
