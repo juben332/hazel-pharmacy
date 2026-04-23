@@ -102,7 +102,11 @@
     <div class="stats-grid" id="report-stats">
       <div class="stat-card">
         <div class="stat-card__icon stat-card__icon--blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-        <div><p class="stat-card__label">Total Revenue</p><p class="stat-card__value" id="rep-revenue">₱0.00</p></div>
+        <div>
+          <p class="stat-card__label">Net Revenue</p>
+          <p class="stat-card__value" id="rep-revenue">₱0.00</p>
+          <p class="text-xs text-muted" id="rep-revenue-sub" style="margin-top:2px"></p>
+        </div>
       </div>
       <div class="stat-card">
         <div class="stat-card__icon stat-card__icon--green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
@@ -114,7 +118,19 @@
       </div>
       <div class="stat-card">
         <div class="stat-card__icon stat-card__icon--purple"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
-        <div><p class="stat-card__label">Items Sold</p><p class="stat-card__value" id="rep-items">0</p></div>
+        <div>
+          <p class="stat-card__label">Items Sold (Net)</p>
+          <p class="stat-card__value" id="rep-items">0</p>
+          <p class="text-xs text-muted" id="rep-items-sub" style="margin-top:2px"></p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon" style="background:#fee2e2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/></svg></div>
+        <div>
+          <p class="stat-card__label">Total Refunded</p>
+          <p class="stat-card__value" id="rep-refunded" style="color:#dc2626">₱0.00</p>
+          <p class="text-xs text-muted" id="rep-returns-count" style="margin-top:2px"></p>
+        </div>
       </div>
     </div>
 
@@ -302,6 +318,7 @@
 
   let allTxns = [];
   let allProducts = [];
+  let allReturns = [];
   let chartRef = null;
   let payChartRef = null;
   let currentPeriodLabel = 'WEEKLY REPORT';
@@ -377,7 +394,7 @@
       currentPeriodLabel = 'CUSTOM REPORT';
     }
 
-    const [txSnap, prodSnap] = await Promise.all([
+    const [txSnap, prodSnap, retSnap] = await Promise.all([
       getDocs(query(
         collection(db, 'transactions'),
         where('createdAt', '>=', Timestamp.fromDate(from)),
@@ -385,11 +402,18 @@
         orderBy('createdAt', 'desc')
       )),
       getDocs(collection(db, 'products')),
+      getDocs(query(
+        collection(db, 'returns'),
+        where('createdAt', '>=', Timestamp.fromDate(from)),
+        where('createdAt', '<=', Timestamp.fromDate(to)),
+        orderBy('createdAt', 'desc')
+      )),
     ]);
 
     // Filter completed in JS — avoids needing a composite Firestore index
     allTxns = txSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => t.status === 'completed');
     allProducts = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allReturns = retSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     document.getElementById('product-report-title').textContent = currentPeriodLabel;
 
@@ -401,12 +425,27 @@
   }
 
   function renderSummary() {
-    const revenue = allTxns.reduce((s, t) => s + (t.total || 0), 0);
-    const items = allTxns.reduce((s, t) => s + (t.items?.reduce((a, i) => a + i.qty, 0) || 0), 0);
-    document.getElementById('rep-revenue').textContent = formatPeso(revenue);
+    const grossRevenue = allTxns.reduce((s, t) => s + (t.total || 0), 0);
+    const totalRefunded = allReturns.reduce((s, r) => s + (r.refundAmount || 0), 0);
+    const netRevenue = grossRevenue - totalRefunded;
+    const grossItems = allTxns.reduce((s, t) => s + (t.items?.reduce((a, i) => a + i.qty, 0) || 0), 0);
+    const returnedItems = allReturns.reduce((s, r) => s + (r.items?.reduce((a, i) => a + i.qty, 0) || 0), 0);
+    const netItems = grossItems - returnedItems;
+
+    document.getElementById('rep-revenue').textContent = formatPeso(netRevenue);
+    document.getElementById('rep-revenue-sub').textContent = totalRefunded > 0
+      ? `Gross ${formatPeso(grossRevenue)} − Refunded ${formatPeso(totalRefunded)}`
+      : '';
     document.getElementById('rep-txns').textContent = allTxns.length;
-    document.getElementById('rep-avg').textContent = allTxns.length ? formatPeso(revenue / allTxns.length) : '₱0.00';
-    document.getElementById('rep-items').textContent = items;
+    document.getElementById('rep-avg').textContent = allTxns.length ? formatPeso(netRevenue / allTxns.length) : '₱0.00';
+    document.getElementById('rep-items').textContent = netItems;
+    document.getElementById('rep-items-sub').textContent = returnedItems > 0
+      ? `${grossItems} sold − ${returnedItems} returned`
+      : '';
+    document.getElementById('rep-refunded').textContent = formatPeso(totalRefunded);
+    document.getElementById('rep-returns-count').textContent = allReturns.length
+      ? `${allReturns.length} return${allReturns.length > 1 ? 's' : ''} this period`
+      : 'No returns this period';
   }
 
   function renderTable() {
@@ -427,8 +466,11 @@
         <td>${formatPeso(t.subtotal)}</td>
         <td>${t.discountAmount > 0 ? formatPeso(t.discountAmount) : '—'}</td>
         <td class="font-bold">${formatPeso(t.total)}</td>
-        <td><span class="badge badge--blue">${t.paymentMethod}</span></td>
-        <td><button class="btn btn--outline btn--sm" style="white-space:nowrap;color:#dc2626;border-color:#dc2626" onclick="openReturnModal('${t.id}')">↩ Return</button></td>
+        <td>
+          <span class="badge badge--blue">${t.paymentMethod}</span>
+          ${t.hasReturn ? '<br/><span class="badge badge--red" style="margin-top:4px">↩ Returned</span>' : ''}
+        </td>
+        <td><button class="btn btn--outline btn--sm" style="white-space:nowrap;color:#dc2626;border-color:#dc2626" onclick="openReturnModal('${t.id}')">${t.hasReturn ? '↩ More' : '↩ Return'}</button></td>
       </tr>`;
     }).join('');
   }
@@ -446,8 +488,14 @@
           return td.toDateString() === d.toDateString();
         })
         .reduce((s, t) => s + (t.total || 0), 0);
+      const dayRefunded = allReturns
+        .filter(r => {
+          const rd = r.createdAt?.toDate?.() || new Date(r.createdAt);
+          return rd.toDateString() === d.toDateString();
+        })
+        .reduce((s, r) => s + (r.refundAmount || 0), 0);
       labels.push(label);
-      data.push(dayTotal);
+      data.push(Math.max(0, dayTotal - dayRefunded));
     }
 
     if (chartRef) chartRef.destroy();
@@ -485,12 +533,19 @@
       return;
     }
 
-    // Build sold-qty map per product id from transactions
+    // Build sold-qty map per product id from transactions (gross)
     const soldMap = {};
     allTxns.forEach(t => {
       (t.items || []).forEach(item => {
         const key = item.id || item.productId || item.name;
         soldMap[key] = (soldMap[key] || 0) + (item.qty || 0);
+      });
+    });
+    // Subtract returned quantities so SOLD reflects net units
+    allReturns.forEach(r => {
+      (r.items || []).forEach(item => {
+        const key = item.id || item.productId || item.name;
+        soldMap[key] = Math.max(0, (soldMap[key] || 0) - (item.qty || 0));
       });
     });
 
@@ -721,6 +776,12 @@
       (t.items || []).forEach(item => {
         const key = item.id || item.productId || item.name;
         soldMap[key] = (soldMap[key] || 0) + (item.qty || 0);
+      });
+    });
+    allReturns.forEach(r => {
+      (r.items || []).forEach(item => {
+        const key = item.id || item.productId || item.name;
+        soldMap[key] = Math.max(0, (soldMap[key] || 0) - (item.qty || 0));
       });
     });
 
