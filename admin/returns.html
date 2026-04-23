@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hazel Pharmacy — Returns</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__logo">
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style="flex-shrink:0;border-radius:8px;"><rect width="36" height="36" rx="8" fill="#2563eb"/><path d="M14 8h8v6h6v8h-6v6h-8v-6H8v-8h6V8z" fill="white"/></svg>
+    <span>Hazel Pharmacy Admin</span>
+  </div>
+  <nav class="sidebar__nav">
+    <a href="/admin/index.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="/pos.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      POS / Cashier
+    </a>
+    <a href="/admin/inventory.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Inventory
+    </a>
+    <a href="/admin/prescriptions.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Prescriptions
+    </a>
+    <a href="/admin/customers.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Supplier
+    </a>
+    <a href="/admin/reports.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </a>
+    <a href="/admin/returns.html" class="sidebar__link sidebar__link--active">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/></svg>
+      Returns
+    </a>
+    <a href="/admin/staff.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/></svg>
+      Staff
+    </a>
+  </nav>
+  <div class="sidebar__bottom">
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-avatar">A</div>
+      <div>
+        <p class="sidebar__uname" id="topbar-name">—</p>
+        <p class="sidebar__urole" id="topbar-role">Administrator</p>
+      </div>
+    </div>
+    <button class="sidebar__signout" id="sign-out-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header class="topbar">
+    <button class="topbar__menu" id="menu-toggle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h2 class="topbar__title">Returns & Refunds</h2>
+  </header>
+
+  <div class="page-body">
+    <!-- Summary cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--red"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/></svg></div>
+        <div><p class="stat-card__label">Total Returns</p><p class="stat-card__value" id="stat-total-returns">0</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--yellow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <div><p class="stat-card__label">Total Refunded</p><p class="stat-card__value" id="stat-total-refunded">₱0.00</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <div><p class="stat-card__label">Cash Refunds</p><p class="stat-card__value" id="stat-cash-refunds">0</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg></div>
+        <div><p class="stat-card__label">Store Credits</p><p class="stat-card__value" id="stat-store-credits">0</p></div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="card">
+      <div class="card__header">
+        <div class="search-filter-row">
+          <input class="form-control" type="text" id="search-returns" placeholder="Search by return #, txn #, or reason…" />
+          <select class="form-control" id="filter-reason">
+            <option value="">All Reasons</option>
+            <option value="Wrong Item">Wrong Item</option>
+            <option value="Defective / Damaged">Defective / Damaged</option>
+            <option value="Overpurchased">Overpurchased</option>
+            <option value="Doctor Changed Prescription">Doctor Changed Prescription</option>
+            <option value="Expired Product">Expired Product</option>
+            <option value="Other">Other</option>
+          </select>
+          <select class="form-control" id="filter-refund">
+            <option value="">All Refund Types</option>
+            <option value="Cash Refund">Cash Refund</option>
+            <option value="Store Credit">Store Credit</option>
+            <option value="Exchange">Exchange</option>
+          </select>
+        </div>
+      </div>
+      <div class="card__body table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Return #</th>
+              <th>Date</th>
+              <th>Original Txn</th>
+              <th>Items Returned</th>
+              <th>Reason</th>
+              <th>Refund Method</th>
+              <th>Refund Amount</th>
+              <th>Processed By</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="returns-body"><tr><td colspan="9" class="text-center text-muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Return Detail Modal -->
+<div class="modal" id="view-return-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box modal__box--sm">
+    <div class="modal__header">
+      <h3>Return Detail</h3>
+      <button class="modal__close" id="close-view-return">✕</button>
+    </div>
+    <div class="modal__body" id="view-return-content"></div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="close-view-return-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script type="module">
+  import { db } from '/js/firebase-config.js';
+  import { requireAdmin, handleSignOut, showToast, formatPeso, formatDate, populateTopbar } from '/js/main.js';
+  import { collection, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  let allReturns = [];
+
+  requireAdmin(async user => {
+    populateTopbar(user);
+    document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();
+    await loadReturns();
+  });
+
+  document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+  const sidebarEl = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    const open = sidebarEl.classList.toggle('sidebar--open');
+    overlay.classList.toggle('sidebar-overlay--show', open);
+  });
+  overlay.addEventListener('click', () => {
+    sidebarEl.classList.remove('sidebar--open');
+    overlay.classList.remove('sidebar-overlay--show');
+  });
+
+  async function loadReturns() {
+    const snap = await getDocs(query(collection(db, 'returns'), orderBy('createdAt', 'desc')));
+    allReturns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderStats();
+    renderTable();
+  }
+
+  function renderStats() {
+    const total    = allReturns.length;
+    const refunded = allReturns.reduce((s, r) => s + (r.refundAmount || 0), 0);
+    const cash     = allReturns.filter(r => r.refundMethod === 'Cash Refund').length;
+    const credit   = allReturns.filter(r => r.refundMethod === 'Store Credit').length;
+    document.getElementById('stat-total-returns').textContent  = total;
+    document.getElementById('stat-total-refunded').textContent = formatPeso(refunded);
+    document.getElementById('stat-cash-refunds').textContent   = cash;
+    document.getElementById('stat-store-credits').textContent  = credit;
+  }
+
+  function renderTable() {
+    const search   = document.getElementById('search-returns').value.toLowerCase();
+    const reason   = document.getElementById('filter-reason').value;
+    const refund   = document.getElementById('filter-refund').value;
+
+    const list = allReturns.filter(r => {
+      if (reason && r.reason !== reason) return false;
+      if (refund && r.refundMethod !== refund) return false;
+      if (search && !r.returnNumber?.toLowerCase().includes(search)
+                 && !r.originalTxnRef?.toLowerCase().includes(search)
+                 && !r.reason?.toLowerCase().includes(search)) return false;
+      return true;
+    });
+
+    const tbody = document.getElementById('returns-body');
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No returns found</td></tr>';
+      return;
+    }
+
+    const reasonColor = {
+      'Wrong Item': 'badge--red',
+      'Defective / Damaged': 'badge--red',
+      'Overpurchased': 'badge--yellow',
+      'Doctor Changed Prescription': 'badge--blue',
+      'Expired Product': 'badge--red',
+      'Other': 'badge--grey',
+    };
+    const refundColor = {
+      'Cash Refund': 'badge--green',
+      'Store Credit': 'badge--blue',
+      'Exchange': 'badge--yellow',
+    };
+
+    tbody.innerHTML = list.map(r => `
+      <tr>
+        <td><span class="font-mono text-sm">${r.returnNumber || r.id.slice(-6).toUpperCase()}</span></td>
+        <td class="text-sm">${formatDate(r.createdAt)}</td>
+        <td><span class="font-mono text-sm">${r.originalTxnRef || '—'}</span></td>
+        <td class="text-sm">${(r.items || []).map(i => `${i.name} ×${i.qty}`).join(', ')}</td>
+        <td><span class="badge ${reasonColor[r.reason] || 'badge--grey'}">${r.reason || '—'}</span></td>
+        <td><span class="badge ${refundColor[r.refundMethod] || 'badge--grey'}">${r.refundMethod || '—'}</span></td>
+        <td class="font-bold">${formatPeso(r.refundAmount)}</td>
+        <td class="text-sm">${r.processedBy || '—'}</td>
+        <td>
+          <button class="btn btn--ghost btn--sm" onclick="viewReturn('${r.id}')">View</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  ['search-returns','filter-reason','filter-refund'].forEach(id =>
+    document.getElementById(id).addEventListener('input', renderTable)
+  );
+
+  window.viewReturn = id => {
+    const r = allReturns.find(x => x.id === id);
+    if (!r) return;
+    const itemsHtml = (r.items || []).map(i =>
+      `<tr><td>${i.name}</td><td style="text-align:right">${i.qty}</td><td style="text-align:right">${formatPeso(i.price)}</td><td style="text-align:right">${formatPeso(i.qty * i.price)}</td></tr>`
+    ).join('');
+    document.getElementById('view-return-content').innerHTML = `
+      <dl class="detail-list">
+        <dt>Return #</dt><dd>${r.returnNumber || r.id.slice(-6).toUpperCase()}</dd>
+        <dt>Original Txn</dt><dd>${r.originalTxnRef || '—'}</dd>
+        <dt>Date</dt><dd>${formatDate(r.createdAt)}</dd>
+        <dt>Reason</dt><dd>${r.reason || '—'}</dd>
+        <dt>Refund Method</dt><dd>${r.refundMethod || '—'}</dd>
+        <dt>Refund Amount</dt><dd><strong>${formatPeso(r.refundAmount)}</strong></dd>
+        <dt>Processed By</dt><dd>${r.processedBy || '—'}</dd>
+        ${r.notes ? `<dt>Notes</dt><dd>${r.notes}</dd>` : ''}
+      </dl>
+      <div style="margin-top:16px">
+        <p class="text-sm font-bold" style="margin-bottom:8px">Items Returned</p>
+        <table class="table">
+          <thead><tr><th>Product</th><th style="text-align:right">Qty</th><th style="text-align:right">Price</th><th style="text-align:right">Subtotal</th></tr></thead>
+          <tbody>${itemsHtml}</tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('view-return-modal').classList.add('modal--open');
+  };
+
+  document.getElementById('close-view-return').addEventListener('click', () => document.getElementById('view-return-modal').classList.remove('modal--open'));
+  document.getElementById('close-view-return-btn').addEventListener('click', () => document.getElementById('view-return-modal').classList.remove('modal--open'));
+</script>
+</body>
+</html>

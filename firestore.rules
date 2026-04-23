@@ -50,5 +50,11 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow read:   if isAdmin();
     }
+
+    // Returns — any signed-in user can read/create, admin can update/delete
+    match /returns/{id} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
   }
 }

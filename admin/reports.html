@@ -43,6 +43,10 @@
       <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Reports
     </a>
+        <a href="/admin/returns.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/></svg>
+      Returns
+    </a>
     <a href="/admin/staff.html" class="sidebar__link">
       <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/></svg>
       Staff
@@ -134,7 +138,7 @@
       <div class="card__body table-responsive">
         <table class="table">
           <thead>
-            <tr><th>Txn #</th><th>Date / Time</th><th>Cashier</th><th>Items Purchased</th><th>Subtotal</th><th>Discount</th><th>Total</th><th>Payment</th></tr>
+            <tr><th>Txn #</th><th>Date / Time</th><th>Cashier</th><th>Items Purchased</th><th>Subtotal</th><th>Discount</th><th>Total</th><th>Payment</th><th></th></tr>
           </thead>
           <tbody id="txn-body"><tr><td colspan="8" class="text-center text-muted">Select a period and click Load</td></tr></tbody>
         </table>
@@ -172,6 +176,61 @@
       </div>
     </div><!-- /view-product -->
 
+  </div>
+</div>
+
+<!-- Process Return Modal -->
+<div class="modal" id="return-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box">
+    <div class="modal__header">
+      <h3>Process Return</h3>
+      <button class="modal__close" id="close-return-modal">✕</button>
+    </div>
+    <div class="modal__body">
+      <input type="hidden" id="ret-txn-id" />
+      <div id="ret-txn-info" style="background:#f8fafc;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.85rem"></div>
+
+      <p class="form-label" style="margin-bottom:8px">Select items to return:</p>
+      <div id="ret-items-list" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:16px"></div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Reason for Return *</label>
+          <select class="form-control" id="ret-reason">
+            <option value="">— Select reason —</option>
+            <option value="Wrong Item">Wrong Item</option>
+            <option value="Defective / Damaged">Defective / Damaged</option>
+            <option value="Overpurchased">Overpurchased</option>
+            <option value="Doctor Changed Prescription">Doctor Changed Prescription</option>
+            <option value="Expired Product">Expired Product</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Refund Method *</label>
+          <select class="form-control" id="ret-refund-method">
+            <option value="">— Select —</option>
+            <option value="Cash Refund">Cash Refund</option>
+            <option value="Store Credit">Store Credit</option>
+            <option value="Exchange">Exchange</option>
+          </select>
+        </div>
+        <div class="form-group form-group--full">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control" id="ret-notes" rows="2" placeholder="Optional notes about this return…"></textarea>
+        </div>
+      </div>
+
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600;color:#166534">Refund Amount:</span>
+        <span style="font-size:1.25rem;font-weight:700;color:#166534" id="ret-refund-amount">₱0.00</span>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="cancel-return-modal">Cancel</button>
+      <button class="btn btn--danger" id="confirm-return-btn">Confirm Return</button>
+    </div>
   </div>
 </div>
 
@@ -239,7 +298,7 @@
 <script type="module">
   import { db } from '/js/firebase-config.js';
   import { requireAdmin, handleSignOut, showToast, formatPeso, formatDate, populateTopbar } from '/js/main.js';
-  import { collection, getDocs, query, where, orderBy, Timestamp, doc, updateDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { collection, getDocs, query, where, orderBy, Timestamp, doc, updateDoc, addDoc, writeBatch, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   let allTxns = [];
   let allProducts = [];
@@ -367,6 +426,7 @@
         <td>${t.discountAmount > 0 ? formatPeso(t.discountAmount) : '—'}</td>
         <td class="font-bold">${formatPeso(t.total)}</td>
         <td><span class="badge badge--blue">${t.paymentMethod}</span></td>
+        <td><button class="btn btn--outline btn--sm" style="white-space:nowrap;color:#dc2626;border-color:#dc2626" onclick="openReturnModal('${t.id}')">↩ Return</button></td>
       </tr>`;
     }).join('');
   }
@@ -473,6 +533,124 @@
     });
     tbody.innerHTML = rows.join('');
   }
+
+  // ── Process Return ────────────────────────────────────────────────────────
+  let returnTxn = null;
+
+  window.openReturnModal = id => {
+    returnTxn = allTxns.find(t => t.id === id);
+    if (!returnTxn) return;
+
+    document.getElementById('ret-txn-id').value = id;
+    document.getElementById('ret-reason').value = '';
+    document.getElementById('ret-refund-method').value = '';
+    document.getElementById('ret-notes').value = '';
+    document.getElementById('ret-refund-amount').textContent = '₱0.00';
+
+    document.getElementById('ret-txn-info').innerHTML = `
+      <strong>Txn #${id.slice(-8).toUpperCase()}</strong> &nbsp;·&nbsp;
+      ${formatDate(returnTxn.createdAt)} &nbsp;·&nbsp;
+      Cashier: ${returnTxn.cashierName || '—'} &nbsp;·&nbsp;
+      Total: <strong>${formatPeso(returnTxn.total)}</strong>
+    `;
+
+    const items = returnTxn.items || [];
+    document.getElementById('ret-items-list').innerHTML = items.map((item, i) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid #e2e8f0;${i===items.length-1?'border-bottom:none':''}">
+        <input type="checkbox" id="ret-chk-${i}" data-idx="${i}" class="ret-item-chk" style="width:16px;height:16px;cursor:pointer" />
+        <label for="ret-chk-${i}" style="flex:1;cursor:pointer;font-size:0.9rem">${item.name}</label>
+        <span style="color:#64748b;font-size:0.85rem">×${item.qty} @ ${formatPeso(item.price)}</span>
+        <input type="number" class="form-control ret-qty" data-idx="${i}" data-max="${item.qty}" data-price="${item.price}"
+          min="1" max="${item.qty}" value="${item.qty}"
+          style="width:70px;text-align:center" disabled />
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.ret-item-chk').forEach(chk => {
+      chk.addEventListener('change', e => {
+        const idx = e.target.dataset.idx;
+        document.querySelector(`.ret-qty[data-idx="${idx}"]`).disabled = !e.target.checked;
+        updateRefundAmount();
+      });
+    });
+    document.querySelectorAll('.ret-qty').forEach(inp => inp.addEventListener('input', updateRefundAmount));
+
+    document.getElementById('return-modal').classList.add('modal--open');
+  };
+
+  function updateRefundAmount() {
+    let total = 0;
+    document.querySelectorAll('.ret-item-chk:checked').forEach(chk => {
+      const idx = chk.dataset.idx;
+      const qty = parseInt(document.querySelector(`.ret-qty[data-idx="${idx}"]`).value) || 0;
+      const price = parseFloat(chk.closest('div').querySelector('.ret-qty').dataset.price) || 0;
+      total += qty * price;
+    });
+    document.getElementById('ret-refund-amount').textContent = formatPeso(total);
+  }
+
+  const closeReturnModal = () => {
+    document.getElementById('return-modal').classList.remove('modal--open');
+    returnTxn = null;
+  };
+  document.getElementById('close-return-modal').addEventListener('click', closeReturnModal);
+  document.getElementById('cancel-return-modal').addEventListener('click', closeReturnModal);
+
+  document.getElementById('confirm-return-btn').addEventListener('click', async () => {
+    const reason = document.getElementById('ret-reason').value;
+    const refundMethod = document.getElementById('ret-refund-method').value;
+    const notes = document.getElementById('ret-notes').value.trim();
+
+    if (!reason) { showToast('Please select a reason', 'error'); return; }
+    if (!refundMethod) { showToast('Please select a refund method', 'error'); return; }
+
+    const selectedItems = [];
+    document.querySelectorAll('.ret-item-chk:checked').forEach(chk => {
+      const idx = parseInt(chk.dataset.idx);
+      const qty = parseInt(document.querySelector(`.ret-qty[data-idx="${idx}"]`).value) || 0;
+      const original = returnTxn.items[idx];
+      if (qty > 0) selectedItems.push({ ...original, qty });
+    });
+
+    if (!selectedItems.length) { showToast('Select at least one item to return', 'error'); return; }
+
+    const refundAmount = selectedItems.reduce((s, i) => s + i.qty * i.price, 0);
+    const returnNumber = 'RET-' + Date.now().toString().slice(-6);
+
+    try {
+      const batch = writeBatch(db);
+
+      // Restore stock for each returned item
+      selectedItems.forEach(item => {
+        if (item.id) batch.update(doc(db, 'products', item.id), { stock: increment(item.qty), updatedAt: serverTimestamp() });
+      });
+
+      // Mark original transaction as having a return
+      batch.update(doc(db, 'transactions', returnTxn.id), { hasReturn: true, updatedAt: serverTimestamp() });
+
+      await batch.commit();
+
+      // Create return record
+      await addDoc(collection(db, 'returns'), {
+        returnNumber,
+        originalTxnId: returnTxn.id,
+        originalTxnRef: returnTxn.id.slice(-8).toUpperCase(),
+        items: selectedItems,
+        reason,
+        refundMethod,
+        refundAmount,
+        notes,
+        processedBy: currentUser?.displayName || currentUser?.email || '—',
+        processedById: currentUser?.uid,
+        createdAt: serverTimestamp(),
+        status: 'processed',
+      });
+
+      closeReturnModal();
+      showToast(`Return processed — ${formatPeso(refundAmount)} ${refundMethod}`);
+      await loadReport();
+    } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+  });
 
   // ── Edit Category ─────────────────────────────────────────────────────────
   window.openEditCategory = encoded => {
