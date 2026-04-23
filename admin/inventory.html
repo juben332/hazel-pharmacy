@@ -76,6 +76,12 @@
         <div class="search-filter-row">
           <input class="form-control" type="text" id="search-input" placeholder="Search products…" />
           <select class="form-control" id="category-filter"><option value="">All Categories</option></select>
+          <select class="form-control" id="drug-type-filter">
+            <option value="">All Drug Types</option>
+            <option value="Generic">Generic</option>
+            <option value="Branded">Branded</option>
+            <option value="Galenical">Galenical</option>
+          </select>
           <select class="form-control" id="supplier-filter"><option value="">All Suppliers</option></select>
           <select class="form-control" id="stock-filter">
             <option value="">All Stock Levels</option>
@@ -90,6 +96,7 @@
             <tr>
               <th>Product Name</th>
               <th>Category</th>
+              <th>Drug Type</th>
               <th>Supplier</th>
               <th>Price</th>
               <th>Stock</th>
@@ -99,7 +106,7 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="product-body"><tr><td colspan="9" class="text-center text-muted">Loading…</td></tr></tbody>
+          <tbody id="product-body"><tr><td colspan="10" class="text-center text-muted">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -148,6 +155,15 @@
         <div class="form-group">
           <label class="form-label">Supplier</label>
           <input class="form-control" type="text" id="f-supplier" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Drug Type</label>
+          <select class="form-control" id="f-drug-type">
+            <option value="">— Select —</option>
+            <option value="Generic">Generic</option>
+            <option value="Branded">Branded</option>
+            <option value="Galenical">Galenical</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Unit</label>
@@ -240,12 +256,14 @@
   function renderTable() {
     const search = document.getElementById('search-input').value.toLowerCase();
     const cat = document.getElementById('category-filter').value;
+    const drugTypeF = document.getElementById('drug-type-filter').value;
     const supplierF = document.getElementById('supplier-filter').value;
     const stockF = document.getElementById('stock-filter').value;
 
     let list = products.filter(p => {
       if (search && !p.name?.toLowerCase().includes(search)) return false;
       if (cat && p.category !== cat) return false;
+      if (drugTypeF && p.drugType !== drugTypeF) return false;
       if (supplierF && p.supplier !== supplierF) return false;
       if (stockF === 'low' && !(p.stock > 0 && p.stock <= (p.lowStockThreshold || 10))) return false;
       if (stockF === 'out' && p.stock !== 0) return false;
@@ -257,7 +275,7 @@
     const in30str = in30.toISOString().slice(0,10);
 
     const tbody = document.getElementById('product-body');
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No products found</td></tr>'; return; }
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No products found</td></tr>'; return; }
     tbody.innerHTML = list.map(p => {
       const isLow = p.stock <= (p.lowStockThreshold || 10) && p.stock > 0;
       const isOut = p.stock === 0;
@@ -273,6 +291,7 @@
       return `<tr class="${rowClass}">
         <td><strong>${p.name}</strong>${p.description ? `<br/><small class="text-muted">${p.description}</small>` : ''}</td>
         <td>${p.category || '—'}</td>
+        <td>${p.drugType ? `<span class="badge ${p.drugType === 'Generic' ? 'badge--green' : p.drugType === 'Branded' ? 'badge--blue' : 'badge--yellow'}">${p.drugType}</span>` : '—'}</td>
         <td>${p.supplier || '—'}</td>
         <td>${formatPeso(p.price)}</td>
         <td>${stockBadge}</td>
@@ -289,7 +308,7 @@
     }).join('');
   }
 
-  ['search-input','category-filter','supplier-filter','stock-filter'].forEach(id =>
+  ['search-input','category-filter','drug-type-filter','supplier-filter','stock-filter'].forEach(id =>
     document.getElementById(id).addEventListener('input', renderTable)
   );
 
@@ -308,6 +327,7 @@
     document.getElementById('f-stock').value = product?.stock ?? '';
     document.getElementById('f-threshold').value = product?.lowStockThreshold || 10;
     document.getElementById('f-expiry').value = product?.expiryDate || '';
+    document.getElementById('f-drug-type').value = product?.drugType || '';
     document.getElementById('f-supplier').value = product?.supplier || '';
     document.getElementById('f-unit').value = product?.unit || '';
     document.getElementById('f-desc').value = product?.description || '';
@@ -334,6 +354,7 @@
       stock: parseInt(document.getElementById('f-stock').value) || 0,
       lowStockThreshold: parseInt(document.getElementById('f-threshold').value) || 10,
       expiryDate: document.getElementById('f-expiry').value || null,
+      drugType: document.getElementById('f-drug-type').value,
       supplier: document.getElementById('f-supplier').value.trim(),
       unit: document.getElementById('f-unit').value.trim(),
       description: document.getElementById('f-desc').value.trim(),
