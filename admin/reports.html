@@ -174,48 +174,12 @@
   </div>
 </div>
 
-<!-- Quick-Edit Product Modal -->
-<div class="modal" id="edit-product-modal">
-  <div class="modal__overlay"></div>
-  <div class="modal__box modal__box--sm">
-    <div class="modal__header">
-      <h3>Edit Product</h3>
-      <button class="modal__close" id="close-edit-product">✕</button>
-    </div>
-    <div class="modal__body">
-      <input type="hidden" id="ep-id" />
-      <div class="form-grid">
-        <div class="form-group form-group--full">
-          <label class="form-label">Product Name</label>
-          <input class="form-control" type="text" id="ep-name" />
-        </div>
-        <div class="form-group form-group--full">
-          <label class="form-label">Category</label>
-          <input class="form-control" type="text" id="ep-category" placeholder="e.g. Antibiotic" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">SRP / Sell Price (₱)</label>
-          <input class="form-control" type="number" id="ep-price" step="0.01" min="0" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Cost / Buy Price (₱)</label>
-          <input class="form-control" type="number" id="ep-cost" step="0.01" min="0" />
-        </div>
-      </div>
-    </div>
-    <div class="modal__footer">
-      <button class="btn btn--outline" id="cancel-edit-product">Cancel</button>
-      <button class="btn btn--primary" id="save-edit-product">Save Changes</button>
-    </div>
-  </div>
-</div>
-
 <div id="toast-container" class="toast-container"></div>
 
 <script type="module">
   import { db } from '/js/firebase-config.js';
   import { requireAdmin, handleSignOut, showToast, formatPeso, formatDate, populateTopbar } from '/js/main.js';
-  import { collection, getDocs, query, where, orderBy, Timestamp, doc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { collection, getDocs, query, where, orderBy, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   let allTxns = [];
   let allProducts = [];
@@ -429,12 +393,7 @@
         const totalSales = sold * srp;
         const profit = sold * (srp - cost);
         rows.push(`<tr>
-          <td style="padding-left:1.5rem">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span>${p.name || '—'}</span>
-              <button class="btn btn--ghost btn--sm" style="flex-shrink:0;font-size:0.7rem;padding:2px 8px" onclick="openEditProduct('${p.id}')">✏ Edit</button>
-            </div>
-          </td>
+          <td style="padding-left:1.5rem">${p.name || '—'}</td>
           <td style="text-align:right">${beginning}</td>
           <td style="text-align:right">${sold}</td>
           <td style="text-align:right">${remaining}</td>
@@ -447,40 +406,6 @@
     });
     tbody.innerHTML = rows.join('');
   }
-
-  // ── Quick Edit Product ────────────────────────────────────────────────────
-  window.openEditProduct = id => {
-    const p = allProducts.find(x => x.id === id);
-    if (!p) return;
-    document.getElementById('ep-id').value = p.id;
-    document.getElementById('ep-name').value = p.name || '';
-    document.getElementById('ep-category').value = p.category || '';
-    document.getElementById('ep-price').value = p.price || '';
-    document.getElementById('ep-cost').value = p.costPrice || '';
-    document.getElementById('edit-product-modal').classList.add('modal--open');
-  };
-
-  const closeEditProductModal = () => document.getElementById('edit-product-modal').classList.remove('modal--open');
-  document.getElementById('close-edit-product').addEventListener('click', closeEditProductModal);
-  document.getElementById('cancel-edit-product').addEventListener('click', closeEditProductModal);
-
-  document.getElementById('save-edit-product').addEventListener('click', async () => {
-    const id = document.getElementById('ep-id').value;
-    const name = document.getElementById('ep-name').value.trim();
-    const category = document.getElementById('ep-category').value.trim();
-    const price = parseFloat(document.getElementById('ep-price').value) || 0;
-    const costPrice = parseFloat(document.getElementById('ep-cost').value) || 0;
-    if (!name) { showToast('Product name is required', 'error'); return; }
-    try {
-      await updateDoc(doc(db, 'products', id), { name, category, price, costPrice, updatedAt: serverTimestamp() });
-      // Update local cache so re-render reflects change immediately
-      const idx = allProducts.findIndex(x => x.id === id);
-      if (idx !== -1) allProducts[idx] = { ...allProducts[idx], name, category, price, costPrice };
-      closeEditProductModal();
-      renderProductReport();
-      showToast('Product updated');
-    } catch (err) { showToast('Failed: ' + err.message, 'error'); }
-  });
 
   document.getElementById('export-product-csv-btn').addEventListener('click', () => {
     if (!allProducts.length) { showToast('No data to export', 'warning'); return; }
