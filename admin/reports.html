@@ -161,6 +161,7 @@
                 <th style="text-align:right">COST (Buy)</th>
                 <th style="text-align:right">TOTAL SALES</th>
                 <th style="text-align:right">PROFIT</th>
+                <th style="width:60px"></th>
               </tr>
             </thead>
             <tbody id="product-report-body">
@@ -174,12 +175,71 @@
   </div>
 </div>
 
+<!-- Edit Category Modal -->
+<div class="modal" id="edit-category-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box modal__box--sm">
+    <div class="modal__header">
+      <h3>Rename Category</h3>
+      <button class="modal__close" id="close-edit-category">✕</button>
+    </div>
+    <div class="modal__body">
+      <input type="hidden" id="ec-old" />
+      <div class="form-group">
+        <label class="form-label">Category Name</label>
+        <input class="form-control" type="text" id="ec-name" />
+      </div>
+      <p class="text-sm text-muted" style="margin-top:6px">This will update all products in this category.</p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="cancel-edit-category">Cancel</button>
+      <button class="btn btn--primary" id="save-edit-category">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal" id="edit-product-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box modal__box--sm">
+    <div class="modal__header">
+      <h3>Edit Product</h3>
+      <button class="modal__close" id="close-edit-product">✕</button>
+    </div>
+    <div class="modal__body">
+      <input type="hidden" id="ep-id" />
+      <div class="form-grid">
+        <div class="form-group form-group--full">
+          <label class="form-label">Product Name</label>
+          <input class="form-control" type="text" id="ep-name" />
+        </div>
+        <div class="form-group form-group--full">
+          <label class="form-label">Category</label>
+          <input class="form-control" type="text" id="ep-category" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">SRP / Sell Price (₱)</label>
+          <input class="form-control" type="number" id="ep-price" step="0.01" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cost / Buy Price (₱)</label>
+          <input class="form-control" type="number" id="ep-cost" step="0.01" min="0" />
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="cancel-edit-product">Cancel</button>
+      <button class="btn btn--primary" id="save-edit-product">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container" class="toast-container"></div>
 
 <script type="module">
   import { db } from '/js/firebase-config.js';
   import { requireAdmin, handleSignOut, showToast, formatPeso, formatDate, populateTopbar } from '/js/main.js';
-  import { collection, getDocs, query, where, orderBy, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { collection, getDocs, query, where, orderBy, Timestamp, doc, updateDoc, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   let allTxns = [];
   let allProducts = [];
@@ -382,7 +442,13 @@
 
     const rows = [];
     Object.keys(groups).sort().forEach(cat => {
-      rows.push(`<tr class="product-report-category"><td colspan="8">${cat.toUpperCase()}</td></tr>`);
+      const catEncoded = encodeURIComponent(cat);
+      rows.push(`<tr class="product-report-category">
+        <td colspan="8">${cat.toUpperCase()}</td>
+        <td style="text-align:right;padding-right:8px">
+          <button class="btn btn--sm" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);font-size:0.7rem;padding:2px 8px" onclick="openEditCategory('${catEncoded}')">✏ Rename</button>
+        </td>
+      </tr>`);
       groups[cat].sort((a, b) => (a.name || '').localeCompare(b.name || '')).forEach(p => {
         const soldKey = p.id || p.name;
         const sold = soldMap[soldKey] || 0;
@@ -401,11 +467,71 @@
           <td style="text-align:right">${formatPeso(cost)}</td>
           <td style="text-align:right">${formatPeso(totalSales)}</td>
           <td style="text-align:right">${formatPeso(profit)}</td>
+          <td style="text-align:right"><button class="btn btn--ghost btn--sm" style="font-size:0.7rem;padding:2px 8px" onclick="openEditProduct('${p.id}')">✏ Edit</button></td>
         </tr>`);
       });
     });
     tbody.innerHTML = rows.join('');
   }
+
+  // ── Edit Category ─────────────────────────────────────────────────────────
+  window.openEditCategory = encoded => {
+    const cat = decodeURIComponent(encoded);
+    document.getElementById('ec-old').value = cat;
+    document.getElementById('ec-name').value = cat;
+    document.getElementById('edit-category-modal').classList.add('modal--open');
+  };
+  const closeEditCategory = () => document.getElementById('edit-category-modal').classList.remove('modal--open');
+  document.getElementById('close-edit-category').addEventListener('click', closeEditCategory);
+  document.getElementById('cancel-edit-category').addEventListener('click', closeEditCategory);
+  document.getElementById('save-edit-category').addEventListener('click', async () => {
+    const oldCat = document.getElementById('ec-old').value;
+    const newCat = document.getElementById('ec-name').value.trim();
+    if (!newCat) { showToast('Category name is required', 'error'); return; }
+    if (newCat === oldCat) { closeEditCategory(); return; }
+    const toUpdate = allProducts.filter(p => (p.category || 'Uncategorized').trim() === oldCat);
+    if (!toUpdate.length) { closeEditCategory(); return; }
+    try {
+      const batch = writeBatch(db);
+      toUpdate.forEach(p => batch.update(doc(db, 'products', p.id), { category: newCat, updatedAt: serverTimestamp() }));
+      await batch.commit();
+      toUpdate.forEach(p => { p.category = newCat; });
+      closeEditCategory();
+      renderProductReport();
+      showToast(`Category renamed to "${newCat}"`);
+    } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+  });
+
+  // ── Edit Product ──────────────────────────────────────────────────────────
+  window.openEditProduct = id => {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('ep-id').value = p.id;
+    document.getElementById('ep-name').value = p.name || '';
+    document.getElementById('ep-category').value = p.category || '';
+    document.getElementById('ep-price').value = p.price || '';
+    document.getElementById('ep-cost').value = p.costPrice || '';
+    document.getElementById('edit-product-modal').classList.add('modal--open');
+  };
+  const closeEditProduct = () => document.getElementById('edit-product-modal').classList.remove('modal--open');
+  document.getElementById('close-edit-product').addEventListener('click', closeEditProduct);
+  document.getElementById('cancel-edit-product').addEventListener('click', closeEditProduct);
+  document.getElementById('save-edit-product').addEventListener('click', async () => {
+    const id = document.getElementById('ep-id').value;
+    const name = document.getElementById('ep-name').value.trim();
+    const category = document.getElementById('ep-category').value.trim();
+    const price = parseFloat(document.getElementById('ep-price').value) || 0;
+    const costPrice = parseFloat(document.getElementById('ep-cost').value) || 0;
+    if (!name) { showToast('Product name is required', 'error'); return; }
+    try {
+      await updateDoc(doc(db, 'products', id), { name, category, price, costPrice, updatedAt: serverTimestamp() });
+      const idx = allProducts.findIndex(x => x.id === id);
+      if (idx !== -1) allProducts[idx] = { ...allProducts[idx], name, category, price, costPrice };
+      closeEditProduct();
+      renderProductReport();
+      showToast('Product updated');
+    } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+  });
 
   document.getElementById('export-product-csv-btn').addEventListener('click', () => {
     if (!allProducts.length) { showToast('No data to export', 'warning'); return; }
