@@ -985,16 +985,33 @@ tbody tr:hover { background: #f8fafc; }
 }
 
 /* ============================================================
-   PRINT — clean receipt output
+   PRINT — only the receipt content, nothing else
    ============================================================ */
 @media print {
-  .sidebar, .sidebar-overlay, .topbar, .pos-left, .pos-cart-overlay,
-  .pos-cart-fab, .modal__overlay, .modal__footer, .toast-container,
-  .page-body, .main-content > header { display: none !important; }
-  body, .main-content { margin: 0 !important; padding: 0 !important; background: #fff !important; }
-  .modal { position: static !important; background: none !important; padding: 0 !important; display: block !important; backdrop-filter: none !important; }
-  .modal__box { box-shadow: none !important; max-width: 100% !important; border: none !important; animation: none !important; }
-  .receipt { font-size: 0.9rem; max-width: 340px; margin: 0 auto; }
+  /* Hide the entire page */
+  body > * { display: none !important; }
+
+  /* Reveal only the open receipt modal */
+  #receipt-modal.modal--open {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: #fff !important;
+    padding: 24px 0 !important;
+  }
+  #receipt-modal.modal--open .modal__overlay,
+  #receipt-modal.modal--open .modal__footer { display: none !important; }
+  #receipt-modal.modal--open .modal__box {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
+    padding: 0 16px !important;
+    animation: none !important;
+  }
+  .receipt { font-size: 0.88rem; }
+  .receipt__header strong { font-size: 1rem; }
+  .receipt__row--total { font-size: 1rem; }
 }
 
 /* Expiry row indicators in inventory table */
