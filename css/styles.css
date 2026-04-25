@@ -600,7 +600,8 @@ tbody tr:hover { background: #f8fafc; }
 
 /* Low stock */
 .low-stock-banner { position: fixed; bottom: 0; left: var(--sidebar-w); right: 0; background: var(--amber); color: #fff; padding: 10px 24px; font-size: 0.84rem; display: flex; align-items: center; gap: 10px; z-index: 50; }
-.low-stock-pill { position: fixed; bottom: 12px; left: calc(var(--sidebar-w) + 16px); background: var(--amber); color: #fff; border: none; border-radius: 100px; padding: 6px 14px; font-size: 0.78rem; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: default; z-index: 50; box-shadow: 0 4px 12px rgba(0,0,0,0.2); pointer-events: none; }
+.low-stock-pill { position: fixed; bottom: 12px; left: calc(var(--sidebar-w) + 16px); background: var(--amber); color: #fff; border: none; border-radius: 100px; padding: 6px 14px; font-size: 0.78rem; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer; z-index: 50; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-decoration: none; transition: background 0.15s; }
+.low-stock-pill:hover { background: #b45309; color: #fff; }
 .low-stock-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .low-stock-item:last-child { border-bottom: none; }
 

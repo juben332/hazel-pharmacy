@@ -24,11 +24,6 @@
       <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
       POS / Cashier
     </a>
-    <!-- Pharmacist links — shown for pharmacist role -->
-    <div id="pharmacist-nav" hidden>
-      <div class="sidebar__divider">Pharmacist</div>
-      
-    </div>
     <!-- Admin-only links — shown via JS when user is admin -->
     <div id="admin-nav" hidden>
       <div class="sidebar__divider">Admin</div>
@@ -156,11 +151,10 @@
 </div>
 
 <!-- Low Stock Alert Banner -->
-<!-- Low stock indicator — static, not clickable -->
-<div class="low-stock-pill" id="low-stock-pill" hidden>
+<a class="low-stock-pill" id="low-stock-pill" href="/admin/inventory.html?filter=low" hidden title="View low stock items in Inventory">
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
   <span id="low-stock-pill-count"></span>
-</div>
+</a>
 
 <div id="toast-container" class="toast-container"></div>
 
@@ -182,7 +176,7 @@
     populateTopbar(user, role);
     setAvatar(user);
     if (role === 'admin') document.getElementById('admin-nav').removeAttribute('hidden');
-    if (role === 'pharmacist') document.getElementById('pharmacist-nav').removeAttribute('hidden');
+
     await loadProducts();
     setTopbarDate();
     setupQuickCash();

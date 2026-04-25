@@ -42,6 +42,10 @@
       <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Reports
     </a>
+    <a href="/admin/returns.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/></svg>
+      Returns
+    </a>
     <a href="/admin/staff.html" class="sidebar__link sidebar__link--active">
       <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/></svg>
       Staff
@@ -141,12 +145,27 @@
   </div>
 </div>
 
+<!-- Delete Confirm Modal -->
+<div class="modal" id="delete-staff-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box modal__box--sm">
+    <div class="modal__header"><h3>Remove Staff</h3></div>
+    <div class="modal__body">
+      <p>Are you sure you want to remove <strong id="delete-staff-name"></strong>? This removes the staff record only — their login account remains in Firebase Auth.</p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="cancel-delete-staff">Cancel</button>
+      <button class="btn btn--danger" id="confirm-delete-staff">Remove</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container" class="toast-container"></div>
 
 <script type="module">
   import { db } from '/js/firebase-config.js';
   import { requireAdmin, handleSignOut, showToast, formatDate, populateTopbar } from '/js/main.js';
-  import { collection, getDocs, addDoc, updateDoc, doc, serverTimestamp, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
@@ -206,6 +225,8 @@
         <td>
           <div class="action-btns">
             <button class="btn btn--ghost btn--sm" onclick="editStaff('${s.id}')">Edit</button>
+            <button class="btn btn--ghost btn--sm" onclick="toggleStatus('${s.id}','${s.status || 'active'}')">${s.status === 'inactive' ? 'Activate' : 'Deactivate'}</button>
+            <button class="btn btn--danger-ghost btn--sm" onclick="removeStaff('${s.id}','${s.name.replace(/'/g,"\\'")}')">Delete</button>
           </div>
         </td>
       </tr>
@@ -239,6 +260,31 @@
   }
 
   window.editStaff = id => { const s = staffList.find(x => x.id === id); if (s) openModal(s); };
+
+  window.toggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+      await updateDoc(doc(db, 'staff', id), { status: newStatus, updatedAt: serverTimestamp() });
+      showToast(`Staff ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
+      await loadStaff();
+    } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+  };
+
+  let deleteStaffTargetId = null;
+  window.removeStaff = (id, name) => {
+    deleteStaffTargetId = id;
+    document.getElementById('delete-staff-name').textContent = name;
+    document.getElementById('delete-staff-modal').classList.add('modal--open');
+  };
+  document.getElementById('cancel-delete-staff').addEventListener('click', () => document.getElementById('delete-staff-modal').classList.remove('modal--open'));
+  document.getElementById('confirm-delete-staff').addEventListener('click', async () => {
+    try {
+      await deleteDoc(doc(db, 'staff', deleteStaffTargetId));
+      showToast('Staff record removed');
+      document.getElementById('delete-staff-modal').classList.remove('modal--open');
+      await loadStaff();
+    } catch (err) { showToast('Delete failed: ' + err.message, 'error'); }
+  });
 
   document.getElementById('save-staff-btn').addEventListener('click', async () => {
     const id = document.getElementById('staff-id').value;
