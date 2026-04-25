@@ -124,15 +124,6 @@
           <p class="stat-card__value" id="stat-expiring" style="color:#ef4444">0</p>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card__icon" style="background:#f0fdf4">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        </div>
-        <div>
-          <p class="stat-card__label">Pending Rx</p>
-          <p class="stat-card__value" id="stat-pending-rx" style="color:#16a34a">0</p>
-        </div>
-      </div>
     </div>
 
     <!-- Charts + Alerts -->
@@ -156,15 +147,6 @@
         </div>
         <div class="card__body">
           <div id="expiring-list"><p class="text-muted">Loading…</p></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card__header">
-          <h3>Pending Prescriptions</h3>
-          <a href="/admin/prescriptions.html" class="btn btn--ghost btn--sm">View All</a>
-        </div>
-        <div class="card__body">
-          <div id="pending-rx-list"><p class="text-muted">Loading…</p></div>
         </div>
       </div>
     </div>
@@ -197,7 +179,7 @@
     document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();
     document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-    await Promise.all([loadStats(), loadRecentTxns(), buildWeeklyChart(), loadLowStock(), loadExpiringProducts(), loadPendingRx()]);
+    await Promise.all([loadStats(), loadRecentTxns(), buildWeeklyChart(), loadLowStock(), loadExpiringProducts()]);
   });
 
   document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
@@ -309,20 +291,6 @@
     }).join('');
   }
 
-  async function loadPendingRx() {
-    const snap = await getDocs(query(collection(db, 'prescriptions'), where('status', '==', 'pending')));
-    const partial = await getDocs(query(collection(db, 'prescriptions'), where('status', '==', 'partial')));
-    const items = [...snap.docs, ...partial.docs].map(d => d.data()).sort((a,b) => (a.validUntil||'').localeCompare(b.validUntil||''));
-    document.getElementById('stat-pending-rx').textContent = items.length;
-    const el = document.getElementById('pending-rx-list');
-    if (!items.length) { el.innerHTML = '<p class="text-muted">No pending prescriptions ✓</p>'; return; }
-    el.innerHTML = items.slice(0,8).map(rx => `
-      <div class="low-stock-item">
-        <div><strong>${rx.patientName || '—'}</strong><br/><small class="text-muted">Rx# ${rx.rxNumber} · ${rx.doctor || '—'}</small></div>
-        <span class="badge ${rx.status === 'partial' ? 'badge--blue' : 'badge--yellow'}">${rx.status}</span>
-      </div>
-    `).join('');
-  }
 </script>
 </body>
 </html>
