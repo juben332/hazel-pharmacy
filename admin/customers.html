@@ -78,9 +78,11 @@
           <input class="form-control" type="text" id="search-input" placeholder="Search by name, phone, or email…" />
           <select class="form-control" id="type-filter">
             <option value="">All Types</option>
-            <option value="regular">Regular</option>
-            <option value="senior">Senior / PWD</option>
-            <option value="vip">VIP</option>
+            <option value="manufacturer">Manufacturer</option>
+            <option value="distributor">Distributor</option>
+            <option value="wholesaler">Wholesaler</option>
+            <option value="local">Local Supplier</option>
+            <option value="direct">Direct Supplier</option>
           </select>
         </div>
       </div>
@@ -109,14 +111,14 @@
   <div class="modal__overlay"></div>
   <div class="modal__box">
     <div class="modal__header">
-      <h3 id="cust-modal-title">Add Customer</h3>
+      <h3 id="cust-modal-title">Add Supplier</h3>
       <button class="modal__close" id="close-cust-modal">✕</button>
     </div>
     <form class="modal__body">
       <input type="hidden" id="cust-id" />
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">Full Name *</label>
+          <label class="form-label">Company / Supplier Name *</label>
           <input class="form-control" type="text" id="f-cname" required />
         </div>
         <div class="form-group">
@@ -128,28 +130,22 @@
           <input class="form-control" type="email" id="f-email" />
         </div>
         <div class="form-group">
-          <label class="form-label">Date of Birth</label>
-          <input class="form-control" type="date" id="f-dob" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Customer Type</label>
+          <label class="form-label">Supplier Type</label>
           <select class="form-control" id="f-ctype">
-            <option value="regular">Regular</option>
-            <option value="senior">Senior / PWD</option>
-            <option value="vip">VIP</option>
+            <option value="manufacturer">Manufacturer</option>
+            <option value="distributor">Distributor</option>
+            <option value="wholesaler">Wholesaler</option>
+            <option value="local">Local Supplier</option>
+            <option value="direct">Direct Supplier</option>
           </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Senior / PWD ID #</label>
-          <input class="form-control" type="text" id="f-scid" placeholder="Required for Senior/PWD" />
         </div>
         <div class="form-group form-group--full">
           <label class="form-label">Address</label>
           <textarea class="form-control" id="f-addr" rows="2"></textarea>
         </div>
         <div class="form-group form-group--full">
-          <label class="form-label">Notes / Allergies</label>
-          <textarea class="form-control" id="f-cnotes" rows="2" placeholder="Known drug allergies, medical conditions…"></textarea>
+          <label class="form-label">Notes / Remarks</label>
+          <textarea class="form-control" id="f-cnotes" rows="2" placeholder="Product lines, payment terms, lead time…"></textarea>
         </div>
       </div>
     </form>
@@ -203,15 +199,16 @@
       if (typeF && c.type !== typeF) return false;
       return true;
     });
-    const typeColor = { regular:'badge--grey', senior:'badge--yellow', vip:'badge--purple' };
+    const typeColor = { manufacturer:'badge--blue', distributor:'badge--purple', wholesaler:'badge--green', local:'badge--yellow', direct:'badge--grey' };
+    const typeLabel = { manufacturer:'Manufacturer', distributor:'Distributor', wholesaler:'Wholesaler', local:'Local Supplier', direct:'Direct Supplier' };
     const tbody = document.getElementById('cust-body');
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No customers found</td></tr>'; return; }
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No suppliers found</td></tr>'; return; }
     tbody.innerHTML = list.map(c => `
       <tr>
         <td><strong>${c.name}</strong>${c.notes ? `<br/><small class="text-muted text-xs">⚠ ${c.notes.slice(0,40)}</small>` : ''}</td>
         <td>${c.phone || '—'}</td>
         <td>${c.email || '—'}</td>
-        <td><span class="badge ${typeColor[c.type] || 'badge--grey'}">${c.type || 'regular'}</span></td>
+        <td><span class="badge ${typeColor[c.type] || 'badge--grey'}">${typeLabel[c.type] || c.type || 'Supplier'}</span></td>
         <td class="text-sm">${c.address || '—'}</td>
         <td class="text-sm text-muted">${formatDate(c.createdAt)}</td>
         <td>
@@ -230,14 +227,12 @@
   document.getElementById('cancel-cust-modal').addEventListener('click', closeModal);
 
   function openModal(c = null) {
-    document.getElementById('cust-modal-title').textContent = c ? 'Edit Customer' : 'Add Customer';
+    document.getElementById('cust-modal-title').textContent = c ? 'Edit Supplier' : 'Add Supplier';
     document.getElementById('cust-id').value = c?.id || '';
     document.getElementById('f-cname').value = c?.name || '';
     document.getElementById('f-phone').value = c?.phone || '';
     document.getElementById('f-email').value = c?.email || '';
-    document.getElementById('f-dob').value = c?.dob || '';
-    document.getElementById('f-ctype').value = c?.type || 'regular';
-    document.getElementById('f-scid').value = c?.seniorId || '';
+    document.getElementById('f-ctype').value = c?.type || 'manufacturer';
     document.getElementById('f-addr').value = c?.address || '';
     document.getElementById('f-cnotes').value = c?.notes || '';
     document.getElementById('cust-modal').classList.add('modal--open');
@@ -253,22 +248,20 @@
       name: document.getElementById('f-cname').value.trim(),
       phone: document.getElementById('f-phone').value.trim(),
       email: document.getElementById('f-email').value.trim(),
-      dob: document.getElementById('f-dob').value || null,
       type: document.getElementById('f-ctype').value,
-      seniorId: document.getElementById('f-scid').value.trim(),
       address: document.getElementById('f-addr').value.trim(),
       notes: document.getElementById('f-cnotes').value.trim(),
       updatedAt: serverTimestamp(),
     };
-    if (!data.name) { showToast('Customer name is required', 'error'); return; }
+    if (!data.name) { showToast('Supplier name is required', 'error'); return; }
     try {
       if (id) {
         await updateDoc(doc(db, 'customers', id), data);
-        showToast('Customer updated');
+        showToast('Supplier updated');
       } else {
         data.createdAt = serverTimestamp();
         await addDoc(collection(db, 'customers'), data);
-        showToast('Customer added');
+        showToast('Supplier added');
       }
       closeModal();
       await loadCustomers();

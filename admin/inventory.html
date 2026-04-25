@@ -155,7 +155,9 @@
         </div>
         <div class="form-group">
           <label class="form-label">Supplier</label>
-          <input class="form-control" type="text" id="f-supplier" />
+          <select class="form-control" id="f-supplier">
+            <option value="">— Select Supplier —</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Drug Type</label>
@@ -235,8 +237,15 @@
   });
 
   async function loadProducts() {
-    const snap = await getDocs(collection(db, 'products'));
-    products = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.name?.localeCompare(b.name));
+    const [prodSnap, suppSnap] = await Promise.all([
+      getDocs(collection(db, 'products')),
+      getDocs(collection(db, 'customers')),
+    ]);
+    products = prodSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.name?.localeCompare(b.name));
+    const supplierNames = suppSnap.docs.map(d => d.data().name).filter(Boolean).sort();
+    const suppSel = document.getElementById('f-supplier');
+    suppSel.innerHTML = '<option value="">— Select Supplier —</option>' +
+      supplierNames.map(n => `<option value="${n}">${n}</option>`).join('');
     buildCategoryFilter();
     buildSupplierFilter();
     renderTable();
@@ -356,7 +365,7 @@
       lowStockThreshold: parseInt(document.getElementById('f-threshold').value) || 10,
       expiryDate: document.getElementById('f-expiry').value || null,
       drugType: document.getElementById('f-drug-type').value,
-      supplier: document.getElementById('f-supplier').value.trim(),
+      supplier: document.getElementById('f-supplier').value,
       unit: document.getElementById('f-unit').value.trim(),
       description: document.getElementById('f-desc').value.trim(),
       requiresPrescription: document.getElementById('f-rx').checked,
