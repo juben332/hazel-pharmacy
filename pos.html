@@ -128,12 +128,6 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <span id="allergy-text"></span>
           </div>
-          <input class="form-control form-control--sm" type="text" id="prescription-ref" placeholder="Rx # (required for Rx items)" />
-          <div class="rx-warning" id="rx-warning" hidden>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            Cart has Rx items — enter prescription number above to proceed.
-          </div>
-          <div class="rx-lookup-result" id="rx-lookup-result" hidden></div>
         </div>
 
         <div class="pos-cart__items" id="cart-items">
@@ -142,37 +136,14 @@
 
         <div class="pos-cart__totals">
           <div class="pos-totals-row"><span>Subtotal</span><span id="subtotal">₱0.00</span></div>
-          <div class="pos-totals-row">
-            <span>Discount</span>
-            <div class="pos-discount-input">
-              <select id="discount-type" class="form-control form-control--sm">
-                <option value="none">None</option>
-                <option value="senior">Senior / PWD (20%)</option>
-                <option value="percent">Custom %</option>
-                <option value="amount">Fixed ₱</option>
-              </select>
-              <input type="number" id="discount-value" class="form-control form-control--sm" placeholder="0" min="0" style="display:none" />
-            </div>
-          </div>
-          <div class="pos-totals-row"><span>Discount Amount</span><span id="discount-amount">₱0.00</span></div>
           <div class="pos-totals-row pos-totals-row--total"><span>TOTAL</span><span id="grand-total">₱0.00</span></div>
         </div>
 
         <div class="pos-payment">
-          <label class="form-label">Payment Method</label>
-          <div class="pos-payment-methods">
-            <button class="pos-pay-btn pos-pay-btn--active" data-method="cash">Cash</button>
-            <button class="pos-pay-btn" data-method="gcash">GCash</button>
-            <button class="pos-pay-btn" data-method="card">Card</button>
-            <button class="pos-pay-btn" data-method="insurance">Insurance</button>
-          </div>
-
-          <div id="cash-section">
-            <label class="form-label">Amount Tendered</label>
-            <input class="form-control form-control--lg" type="number" id="cash-tendered" placeholder="0.00" min="0" step="0.01" />
-            <div class="pos-quick-cash" id="quick-cash"></div>
-            <div class="pos-totals-row"><span>Change</span><span id="change-due" class="pos-change">₱0.00</span></div>
-          </div>
+          <label class="form-label">Amount Tendered</label>
+          <input class="form-control form-control--lg" type="number" id="cash-tendered" placeholder="0.00" min="0" step="0.01" />
+          <div class="pos-quick-cash" id="quick-cash"></div>
+          <div class="pos-totals-row"><span>Change</span><span id="change-due" class="pos-change">₱0.00</span></div>
         </div>
 
         <button class="btn btn--primary btn--full btn--lg" id="checkout-btn" disabled>
@@ -215,7 +186,6 @@
   let products = [];
   let customers = [];
   let cart = [];
-  let paymentMethod = 'cash';
   let filteredCategory = 'all';
 
   requireAuth(async user => {
@@ -491,136 +461,21 @@
     updateCardStates();
   });
 
-  // ── Rx Lookup ──────────────────────────────────────────────────────────────
-  let currentRxRecord = null;
-  let rxLookupTimer = null;
-
-  document.getElementById('prescription-ref').addEventListener('input', () => {
-    clearTimeout(rxLookupTimer);
-    currentRxRecord = null;
-    const resultEl = document.getElementById('rx-lookup-result');
-    resultEl.hidden = true;
-    updateTotals();
-
-    const val = document.getElementById('prescription-ref').value.trim();
-    if (!val) return;
-
-    rxLookupTimer = setTimeout(() => lookupRx(val), 500);
-  });
-
-  async function lookupRx(rxNumber) {
-    const resultEl = document.getElementById('rx-lookup-result');
-    resultEl.hidden = false;
-    resultEl.className = 'rx-lookup-result rx-lookup-result--loading';
-    resultEl.textContent = 'Looking up prescription…';
-
-    try {
-      const snap = await getDocs(query(
-        collection(db, 'prescriptions'),
-        where('rxNumber', '==', rxNumber),
-        limit(1)
-      ));
-
-      if (snap.empty) {
-        currentRxRecord = null;
-        resultEl.className = 'rx-lookup-result rx-lookup-result--error';
-        resultEl.innerHTML = `<strong>Not found:</strong> No prescription with Rx # <em>${rxNumber}</em> in the system.`;
-        updateTotals();
-        return;
-      }
-
-      const rx = snap.docs[0].data();
-      const today = new Date().toISOString().slice(0, 10);
-
-      if (rx.status === 'dispensed') {
-        currentRxRecord = { valid: false };
-        resultEl.className = 'rx-lookup-result rx-lookup-result--error';
-        resultEl.innerHTML = `<strong>Already dispensed:</strong> This prescription has already been used.`;
-        updateTotals();
-        return;
-      }
-      if (rx.status === 'expired' || (rx.validUntil && rx.validUntil < today)) {
-        currentRxRecord = { valid: false };
-        resultEl.className = 'rx-lookup-result rx-lookup-result--error';
-        resultEl.innerHTML = `<strong>Expired:</strong> This prescription expired on ${rx.validUntil || 'unknown date'}.`;
-        updateTotals();
-        return;
-      }
-
-      // Valid prescription
-      currentRxRecord = { valid: true, docId: snap.docs[0].id, rx };
-      resultEl.className = 'rx-lookup-result rx-lookup-result--ok';
-      resultEl.innerHTML = `
-        <div class="rx-lookup-ok-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <strong>Valid Prescription</strong></div>
-        <div class="rx-lookup-detail">Patient: <strong>${rx.patientName || '—'}</strong></div>
-        <div class="rx-lookup-detail">Doctor: ${rx.doctor || '—'}</div>
-        ${rx.validUntil ? `<div class="rx-lookup-detail">Valid until: ${rx.validUntil}</div>` : ''}
-      `;
-      updateTotals();
-    } catch (err) {
-      currentRxRecord = null;
-      resultEl.className = 'rx-lookup-result rx-lookup-result--error';
-      resultEl.textContent = 'Lookup failed: ' + err.message;
-      updateTotals();
-    }
-  }
-
   // ── Totals ─────────────────────────────────────────────────────────────────
   function updateTotals() {
     const subtotal = cart.reduce((sum, x) => sum + x.price * x.qty, 0);
-    const discountAmt = calcDiscount(subtotal);
-    const total = Math.max(0, subtotal - discountAmt);
+    const total = subtotal;
 
     document.getElementById('subtotal').textContent = formatPeso(subtotal);
-    document.getElementById('discount-amount').textContent = formatPeso(discountAmt);
     document.getElementById('grand-total').textContent = formatPeso(total);
 
-    // Update FAB
     const totalQty = cart.reduce((sum, x) => sum + x.qty, 0);
     document.getElementById('fab-count').textContent = totalQty === 1 ? '1 item' : `${totalQty} items`;
     document.getElementById('fab-total').textContent = formatPeso(total);
 
     updateChange(total);
-
-    const hasRxItem = cart.some(x => x.requiresPrescription);
-    const rxRef = document.getElementById('prescription-ref').value.trim();
-    const rxInput = document.getElementById('prescription-ref');
-    const rxWarning = document.getElementById('rx-warning');
-
-    rxWarning.hidden = !hasRxItem;
-    rxInput.classList.toggle('form-control--rx-required', hasRxItem && !rxRef);
-
-    // Disable checkout if Rx items exist but no valid prescription is confirmed
-    const rxValid = !hasRxItem || (rxRef && currentRxRecord && currentRxRecord.valid);
-    document.getElementById('checkout-btn').disabled =
-      cart.length === 0 || total <= 0 || !rxValid;
+    document.getElementById('checkout-btn').disabled = cart.length === 0 || total <= 0;
   }
-
-  function calcDiscount(subtotal) {
-    const type = document.getElementById('discount-type').value;
-    const val  = parseFloat(document.getElementById('discount-value').value) || 0;
-    if (type === 'senior') return subtotal * 0.20;
-    if (type === 'percent') return subtotal * (Math.min(val, 100) / 100);
-    if (type === 'amount')  return Math.min(val, subtotal);
-    return 0;
-  }
-
-  document.getElementById('discount-type').addEventListener('change', e => {
-    const dv = document.getElementById('discount-value');
-    dv.style.display = e.target.value === 'none' || e.target.value === 'senior' ? 'none' : 'block';
-    updateTotals();
-  });
-  document.getElementById('discount-value').addEventListener('input', updateTotals);
-
-  // ── Payment ────────────────────────────────────────────────────────────────
-  document.querySelectorAll('.pos-pay-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.pos-pay-btn').forEach(b => b.classList.remove('pos-pay-btn--active'));
-      btn.classList.add('pos-pay-btn--active');
-      paymentMethod = btn.dataset.method;
-      document.getElementById('cash-section').style.display = paymentMethod === 'cash' ? 'block' : 'none';
-    });
-  });
 
   function updateChange(total) {
     const tendered = parseFloat(document.getElementById('cash-tendered').value) || 0;
@@ -651,23 +506,12 @@
   document.getElementById('checkout-btn').addEventListener('click', processPayment);
 
   async function processPayment() {
-    const totalText = document.getElementById('grand-total').textContent;
-    const total = parseFloat(totalText.replace(/[^0-9.]/g, '')) || 0;
+    const total = parseFloat(document.getElementById('grand-total').textContent.replace(/[^0-9.]/g, '')) || 0;
     const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace(/[^0-9.]/g, '')) || 0;
-    const discountAmt = parseFloat(document.getElementById('discount-amount').textContent.replace(/[^0-9.]/g, '')) || 0;
     const tendered = parseFloat(document.getElementById('cash-tendered').value) || 0;
-    const discountType = document.getElementById('discount-type').value;
     const customerId = document.getElementById('customer-select').value;
-    const prescriptionRef = document.getElementById('prescription-ref').value.trim();
 
-    if (paymentMethod === 'cash' && tendered < total) {
-      showToast('Insufficient cash tendered', 'error'); return;
-    }
-
-    const hasPrescriptionItem = cart.some(x => x.requiresPrescription);
-    if (hasPrescriptionItem && (!prescriptionRef || !currentRxRecord?.valid)) {
-      showToast('A valid prescription number is required for Rx items', 'warning'); return;
-    }
+    if (tendered < total) { showToast('Insufficient cash tendered', 'error'); return; }
 
     const btn = document.getElementById('checkout-btn');
     btn.disabled = true;
@@ -676,12 +520,11 @@
     try {
       const txData = {
         items: cart.map(x => ({ id: x.id, name: x.name, price: x.price, qty: x.qty })),
-        subtotal, discountType, discountAmount: discountAmt, total,
-        paymentMethod,
-        cashTendered: paymentMethod === 'cash' ? tendered : null,
-        changeDue: paymentMethod === 'cash' ? Math.max(0, tendered - total) : null,
+        subtotal, discountType: 'none', discountAmount: 0, total,
+        paymentMethod: 'cash',
+        cashTendered: tendered,
+        changeDue: Math.max(0, tendered - total),
         customerId: customerId || null,
-        prescriptionRef: prescriptionRef || null,
         cashierId: currentUser.uid,
         cashierName: currentUser.displayName || currentUser.email,
         createdAt: serverTimestamp(),
@@ -690,26 +533,15 @@
 
       const txRef = await addDoc(collection(db, 'transactions'), txData);
 
-      // Deduct stock
       await Promise.all(cart.map(item =>
         updateDoc(doc(db, 'products', item.id), {
           stock: (products.find(p => p.id === item.id)?.stock || 0) - item.qty
         })
       ));
 
-      // Mark prescription as dispensed
-      if (currentRxRecord?.valid && currentRxRecord.docId) {
-        await updateDoc(doc(db, 'prescriptions', currentRxRecord.docId), {
-          status: 'dispensed',
-          dispensedAt: serverTimestamp(),
-          dispensedByTx: txRef.id,
-        });
-      }
-
       await logActivity(currentUser, 'transaction_completed', { txId: txRef.id, total });
 
       showReceipt({ id: txRef.id, ...txData });
-      currentRxRecord = null;
       cart = [];
       renderCart();
       await loadProducts();
@@ -739,21 +571,13 @@
       <div class="receipt__row"><span>Subtotal</span><span>${formatPeso(tx.subtotal)}</span></div>
       ${tx.discountAmount > 0 ? `<div class="receipt__row"><span>Discount</span><span>-${formatPeso(tx.discountAmount)}</span></div>` : ''}
       <div class="receipt__row receipt__row--total"><span>TOTAL</span><span>${formatPeso(tx.total)}</span></div>
-      ${tx.paymentMethod === 'cash' ? `
-        <div class="receipt__row"><span>Cash</span><span>${formatPeso(tx.cashTendered)}</span></div>
-        <div class="receipt__row"><span>Change</span><span>${formatPeso(tx.changeDue)}</span></div>` : ''}
-      <div class="receipt__payment">Payment: ${tx.paymentMethod.toUpperCase()}</div>
-      ${tx.prescriptionRef ? `<div class="receipt__payment" style="margin-top:6px;color:#1d4ed8">Rx # ${tx.prescriptionRef}${currentRxRecord?.rx?.patientName ? ' · ' + currentRxRecord.rx.patientName : ''}</div>` : ''}
+      <div class="receipt__row"><span>Cash</span><span>${formatPeso(tx.cashTendered)}</span></div>
+      <div class="receipt__row"><span>Change</span><span>${formatPeso(tx.changeDue)}</span></div>
       <div class="receipt__footer">Thank you for your purchase!<br/>Cashier: ${tx.cashierName}</div>
     `;
     document.getElementById('receipt-modal').classList.add('modal--open');
     renderCart();
-    document.getElementById('discount-type').value = 'none';
-    document.getElementById('discount-value').style.display = 'none';
     document.getElementById('cash-tendered').value = '';
-    document.getElementById('prescription-ref').value = '';
-    document.getElementById('rx-lookup-result').hidden = true;
-    currentRxRecord = null;
     updateTotals();
   }
 
