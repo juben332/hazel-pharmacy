@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hazel Pharmacy — Stock Log</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__logo">
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style="flex-shrink:0;border-radius:8px;"><rect width="36" height="36" rx="8" fill="#2563eb"/><path d="M14 8h8v6h6v8h-6v6h-8v-6H8v-8h6V8z" fill="white"/></svg>
+    <span>Hazel Pharmacy Admin</span>
+  </div>
+  <nav class="sidebar__nav">
+    <a href="/admin/index.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="/pos.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      POS / Cashier
+    </a>
+    <a href="/admin/inventory.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Inventory
+    </a>
+    <a href="/admin/stock-movements.html" class="sidebar__link sidebar__link--active">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Stock Log
+    </a>
+    <a href="/admin/customers.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Supplier
+    </a>
+    <a href="/admin/reports.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </a>
+    <a href="/admin/returns.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.75"/></svg>
+      Returns
+    </a>
+    <a href="/admin/staff.html" class="sidebar__link">
+      <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-1a9 9 0 0118 0v1"/></svg>
+      Staff
+    </a>
+  </nav>
+  <div class="sidebar__bottom">
+    <div class="sidebar__user">
+      <div class="sidebar__avatar" id="sidebar-avatar">A</div>
+      <div>
+        <p class="sidebar__uname" id="topbar-name">—</p>
+        <p class="sidebar__urole" id="topbar-role">Administrator</p>
+      </div>
+    </div>
+    <button class="sidebar__signout" id="sign-out-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header class="topbar">
+    <button class="topbar__menu" id="menu-toggle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h2 class="topbar__title">Stock Log</h2>
+  </header>
+
+  <div class="page-body">
+
+    <!-- Summary cards -->
+    <div class="stats-grid" id="summary-cards" style="margin-bottom:20px">
+      <div class="stat-card">
+        <p class="stat-card__label">Total Restocks</p>
+        <p class="stat-card__value" id="s-restocks">—</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-card__label">Units Added</p>
+        <p class="stat-card__value" id="s-added">—</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-card__label">Adjustments</p>
+        <p class="stat-card__value" id="s-adjustments">—</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-card__label">Movements Logged</p>
+        <p class="stat-card__value" id="s-total">—</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header">
+        <div class="search-filter-row">
+          <input class="form-control" type="text" id="search-input" placeholder="Search by product name…" />
+          <select class="form-control" id="type-filter">
+            <option value="">All Types</option>
+            <option value="restock">Restock</option>
+            <option value="sale">Sale</option>
+            <option value="return">Return</option>
+            <option value="adjustment">Adjustment</option>
+          </select>
+          <input class="form-control" type="date" id="date-from" />
+          <input class="form-control" type="date" id="date-to" />
+          <button class="btn btn--outline" id="clear-filters-btn">Clear</button>
+        </div>
+      </div>
+      <div class="card__body table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date &amp; Time</th>
+              <th>Product</th>
+              <th>Type</th>
+              <th>Change</th>
+              <th>Before</th>
+              <th>After</th>
+              <th>Reason</th>
+              <th>Supplier</th>
+              <th>Cost / Unit</th>
+              <th>Staff</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="log-body"><tr><td colspan="11" class="text-center text-muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card__footer" style="padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <span class="text-sm text-muted" id="row-count"></span>
+        <button class="btn btn--outline btn--sm" id="load-more-btn" style="display:none">Load more</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script type="module">
+  import { db } from '/js/firebase-config.js';
+  import { requireAdmin, handleSignOut, showToast, populateTopbar, formatDate } from '/js/main.js';
+  import { collection, getDocs, query, orderBy, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const PAGE_SIZE = 200;
+  let allMovements = [];
+  let lastDoc = null;
+  let hasMore = false;
+
+  requireAdmin(async user => {
+    populateTopbar(user);
+    document.getElementById('sidebar-avatar').textContent = (user.displayName?.[0] || user.email[0]).toUpperCase();
+    await loadMovements();
+  });
+
+  document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+  const sidebarEl = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    const open = sidebarEl.classList.toggle('sidebar--open');
+    sidebarOverlay.classList.toggle('sidebar-overlay--show', open);
+  });
+  sidebarOverlay.addEventListener('click', () => {
+    sidebarEl.classList.remove('sidebar--open');
+    sidebarOverlay.classList.remove('sidebar-overlay--show');
+  });
+
+  async function loadMovements(append = false) {
+    try {
+      let q = query(collection(db, 'stockMovements'), orderBy('createdAt', 'desc'), limit(PAGE_SIZE + 1));
+      if (append && lastDoc) q = query(collection(db, 'stockMovements'), orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(PAGE_SIZE + 1));
+
+      const snap = await getDocs(q);
+      const docs = snap.docs;
+      hasMore = docs.length > PAGE_SIZE;
+      const batch = docs.slice(0, PAGE_SIZE).map(d => ({ id: d.id, _doc: d, ...d.data() }));
+
+      if (append) {
+        allMovements = [...allMovements, ...batch];
+      } else {
+        allMovements = batch;
+      }
+
+      if (hasMore) lastDoc = docs[PAGE_SIZE - 1];
+      document.getElementById('load-more-btn').style.display = hasMore ? 'inline-flex' : 'none';
+
+      renderSummary();
+      renderTable();
+    } catch (err) {
+      document.getElementById('log-body').innerHTML = `<tr><td colspan="11" class="text-center text-muted">Error: ${err.message}</td></tr>`;
+    }
+  }
+
+  function renderSummary() {
+    const restocks    = allMovements.filter(m => m.type === 'restock').length;
+    const unitsAdded  = allMovements.filter(m => m.quantityChanged > 0).reduce((s, m) => s + m.quantityChanged, 0);
+    const adjustments = allMovements.filter(m => m.type === 'adjustment').length;
+    document.getElementById('s-restocks').textContent    = restocks;
+    document.getElementById('s-added').textContent       = unitsAdded;
+    document.getElementById('s-adjustments').textContent = adjustments;
+    document.getElementById('s-total').textContent       = allMovements.length + (hasMore ? '+' : '');
+  }
+
+  function renderTable() {
+    const search  = document.getElementById('search-input').value.toLowerCase();
+    const typeF   = document.getElementById('type-filter').value;
+    const dateFrom = document.getElementById('date-from').value;
+    const dateTo   = document.getElementById('date-to').value;
+
+    let list = allMovements.filter(m => {
+      if (search && !m.productName?.toLowerCase().includes(search)) return false;
+      if (typeF  && m.type !== typeF) return false;
+      if (dateFrom || dateTo) {
+        const ts = m.createdAt?.toDate ? m.createdAt.toDate() : new Date(m.createdAt?.seconds * 1000);
+        const dateStr = ts.toISOString().slice(0, 10);
+        if (dateFrom && dateStr < dateFrom) return false;
+        if (dateTo   && dateStr > dateTo)   return false;
+      }
+      return true;
+    });
+
+    document.getElementById('row-count').textContent = `Showing ${list.length} of ${allMovements.length}${hasMore ? '+' : ''} records`;
+
+    const typeBadge = { restock:'badge--green', sale:'badge--blue', return:'badge--yellow', adjustment:'badge--grey' };
+    const tbody = document.getElementById('log-body');
+
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">No records found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = list.map(m => {
+      const ts  = m.createdAt?.toDate ? m.createdAt.toDate() : new Date((m.createdAt?.seconds || 0) * 1000);
+      const dateStr = ts.toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
+      const timeStr = ts.toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit' });
+      const isPos = m.quantityChanged >= 0;
+      return `<tr>
+        <td class="text-sm text-muted" style="white-space:nowrap">${dateStr}<br/><small>${timeStr}</small></td>
+        <td><strong>${m.productName || '—'}</strong></td>
+        <td><span class="badge ${typeBadge[m.type] || 'badge--grey'}">${m.type || '—'}</span></td>
+        <td style="font-weight:700;color:${isPos ? '#16a34a' : '#dc2626'}">${isPos ? '+' : ''}${m.quantityChanged}</td>
+        <td class="text-sm">${m.quantityBefore ?? '—'}</td>
+        <td class="text-sm">${m.quantityAfter ?? '—'}</td>
+        <td class="text-sm">${m.reason || '—'}</td>
+        <td class="text-sm">${m.supplier || '—'}</td>
+        <td class="text-sm">${m.costPrice != null ? '₱' + Number(m.costPrice).toFixed(2) : '—'}</td>
+        <td class="text-sm">${m.staffName || '—'}</td>
+        <td class="text-sm text-muted">${m.notes || '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  ['search-input','type-filter','date-from','date-to'].forEach(id =>
+    document.getElementById(id).addEventListener('input', renderTable)
+  );
+
+  document.getElementById('clear-filters-btn').addEventListener('click', () => {
+    document.getElementById('search-input').value = '';
+    document.getElementById('type-filter').value  = '';
+    document.getElementById('date-from').value    = '';
+    document.getElementById('date-to').value      = '';
+    renderTable();
+  });
+
+  document.getElementById('load-more-btn').addEventListener('click', () => loadMovements(true));
+</script>
+</body>
+</html>
