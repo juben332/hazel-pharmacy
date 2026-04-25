@@ -118,15 +118,6 @@
           </div>
         </div>
 
-        <div class="pos-cart__customer">
-          <select class="form-control form-control--sm" id="customer-select">
-            <option value="">Walk-in Customer</option>
-          </select>
-          <div class="allergy-warning" id="allergy-warning" hidden>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span id="allergy-text"></span>
-          </div>
-        </div>
 
         <div class="pos-cart__items" id="cart-items">
           <div class="pos-cart__empty">Cart is empty</div>
@@ -182,7 +173,6 @@
 
   let currentUser = null;
   let products = [];
-  let customers = [];
   let cart = [];
   let filteredCategory = 'all';
 
@@ -193,7 +183,7 @@
     setAvatar(user);
     if (role === 'admin') document.getElementById('admin-nav').removeAttribute('hidden');
     if (role === 'pharmacist') document.getElementById('pharmacist-nav').removeAttribute('hidden');
-    await Promise.all([loadProducts(), loadCustomers()]);
+    await loadProducts();
     setTopbarDate();
     setupQuickCash();
     checkLowStock();
@@ -293,28 +283,6 @@
     renderProducts(document.getElementById('product-search').value);
   }
 
-  async function loadCustomers() {
-    const snap = await getDocs(collection(db, 'customers'));
-    customers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const sel = document.getElementById('customer-select');
-    customers.forEach(c => {
-      const o = document.createElement('option');
-      o.value = c.id;
-      o.textContent = `${c.name}${c.type === 'senior' ? ' (Senior/PWD)' : ''} — ${c.phone || ''}`;
-      sel.appendChild(o);
-    });
-    sel.addEventListener('change', () => {
-      const c = customers.find(x => x.id === sel.value);
-      const warningEl = document.getElementById('allergy-warning');
-      const textEl = document.getElementById('allergy-text');
-      if (c?.notes) {
-        textEl.textContent = 'Allergy/Notes: ' + c.notes;
-        warningEl.hidden = false;
-      } else {
-        warningEl.hidden = true;
-      }
-    });
-  }
 
   function buildCategoryTabs() {
     const cats = ['all', ...new Set(products.map(p => p.category).filter(Boolean))];
@@ -507,8 +475,6 @@
     const total = parseFloat(document.getElementById('grand-total').textContent.replace(/[^0-9.]/g, '')) || 0;
     const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace(/[^0-9.]/g, '')) || 0;
     const tendered = parseFloat(document.getElementById('cash-tendered').value) || 0;
-    const customerId = document.getElementById('customer-select').value;
-
     if (tendered < total) { showToast('Insufficient cash tendered', 'error'); return; }
 
     const btn = document.getElementById('checkout-btn');
@@ -522,7 +488,6 @@
         paymentMethod: 'cash',
         cashTendered: tendered,
         changeDue: Math.max(0, tendered - total),
-        customerId: customerId || null,
         cashierId: currentUser.uid,
         cashierName: currentUser.displayName || currentUser.email,
         createdAt: serverTimestamp(),
