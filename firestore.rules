@@ -56,5 +56,11 @@ service cloud.firestore {
       allow read, create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
+
+    // Stock Movements — signed-in can read/create, admin can update/delete
+    match /stockMovements/{id} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
   }
 }

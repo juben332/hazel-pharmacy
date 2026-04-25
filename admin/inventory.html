@@ -206,16 +206,100 @@
   </div>
 </div>
 
+<!-- Restock Modal -->
+<div class="modal" id="restock-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box">
+    <div class="modal__header">
+      <h3>Restock Product</h3>
+      <button class="modal__close" id="close-restock-modal">✕</button>
+    </div>
+    <div class="modal__body">
+      <p id="restock-product-name" style="font-weight:600;font-size:1rem;margin-bottom:16px;color:var(--text-primary)"></p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Quantity to Add *</label>
+          <input class="form-control" type="number" id="restock-qty" min="1" placeholder="e.g. 100" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cost Price per Unit (₱)</label>
+          <input class="form-control" type="number" id="restock-cost" step="0.01" min="0" placeholder="Optional — updates product cost" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason</label>
+          <select class="form-control" id="restock-reason">
+            <option value="Restock">Restock</option>
+            <option value="Initial Stock">Initial Stock</option>
+            <option value="Adjustment">Adjustment</option>
+            <option value="Returned to Stock">Returned to Stock</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Supplier</label>
+          <select class="form-control" id="restock-supplier">
+            <option value="">— None —</option>
+          </select>
+        </div>
+        <div class="form-group form-group--full">
+          <label class="form-label">Notes (Invoice #, Batch #, etc.)</label>
+          <textarea class="form-control" id="restock-notes" rows="2" placeholder="e.g. Invoice #1234, Batch LOT-2025-A"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="cancel-restock-modal">Cancel</button>
+      <button class="btn btn--primary" id="confirm-restock-btn">Confirm Restock</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stock History Modal -->
+<div class="modal" id="history-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box" style="max-width:900px;width:95vw">
+    <div class="modal__header">
+      <h3 id="history-modal-title">Stock History</h3>
+      <button class="modal__close" id="close-history-modal">✕</button>
+    </div>
+    <div class="modal__body" style="padding:0">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Change</th>
+              <th>Before</th>
+              <th>After</th>
+              <th>Reason</th>
+              <th>Supplier</th>
+              <th>Cost/Unit</th>
+              <th>Staff</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"><tr><td colspan="10" class="text-center text-muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="close-history-footer">Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container" class="toast-container"></div>
 
 <script type="module">
   import { db } from '/js/firebase-config.js';
   import { requireAdmin, handleSignOut, showToast, formatPeso, formatDateShort, logActivity, populateTopbar } from '/js/main.js';
-  import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, increment, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   let products = [];
   let currentUser = null;
   let deleteTargetId = null;
+  let restockTargetId = null;
 
   requireAdmin(async user => {
     currentUser = user;
@@ -311,6 +395,8 @@
         <td>
           <div class="action-btns">
             <button class="btn btn--ghost btn--sm" onclick="editProduct('${p.id}')">Edit</button>
+            <button class="btn btn--primary btn--sm" onclick="restockProduct('${p.id}')">Restock</button>
+            <button class="btn btn--ghost btn--sm" onclick="viewHistory('${p.id}')">History</button>
             <button class="btn btn--danger-ghost btn--sm" onclick="deleteProduct('${p.id}','${p.name.replace(/'/g,"\\'")}')">Delete</button>
           </div>
         </td>
@@ -409,6 +495,113 @@
       await loadProducts();
     } catch (err) { showToast('Delete failed: ' + err.message, 'error'); }
   });
+
+  // ── Restock ────────────────────────────────────────────────────────────────
+  window.restockProduct = id => {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    restockTargetId = id;
+    document.getElementById('restock-product-name').textContent = p.name + ` (Current Stock: ${p.stock})`;
+    document.getElementById('restock-qty').value = '';
+    document.getElementById('restock-cost').value = p.costPrice || '';
+    document.getElementById('restock-reason').value = 'Restock';
+    document.getElementById('restock-notes').value = '';
+    // Mirror supplier options from the inventory supplier dropdown
+    const src = document.getElementById('f-supplier');
+    document.getElementById('restock-supplier').innerHTML = src.innerHTML;
+    document.getElementById('restock-supplier').value = p.supplier || '';
+    document.getElementById('restock-modal').classList.add('modal--open');
+  };
+
+  document.getElementById('close-restock-modal').addEventListener('click', () => document.getElementById('restock-modal').classList.remove('modal--open'));
+  document.getElementById('cancel-restock-modal').addEventListener('click', () => document.getElementById('restock-modal').classList.remove('modal--open'));
+
+  document.getElementById('confirm-restock-btn').addEventListener('click', async () => {
+    const qty = parseInt(document.getElementById('restock-qty').value) || 0;
+    if (qty <= 0) { showToast('Enter a valid quantity to add', 'error'); return; }
+
+    const p = products.find(x => x.id === restockTargetId);
+    if (!p) return;
+
+    const cost     = parseFloat(document.getElementById('restock-cost').value) || null;
+    const reason   = document.getElementById('restock-reason').value;
+    const supplier = document.getElementById('restock-supplier').value;
+    const notes    = document.getElementById('restock-notes').value.trim();
+    const stockBefore = p.stock;
+    const stockAfter  = stockBefore + qty;
+
+    try {
+      await addDoc(collection(db, 'stockMovements'), {
+        productId:      restockTargetId,
+        productName:    p.name,
+        type:           'restock',
+        quantityBefore: stockBefore,
+        quantityAfter:  stockAfter,
+        quantityChanged: qty,
+        reason,
+        supplier:  supplier || '',
+        costPrice: cost,
+        notes,
+        staffId:   currentUser.uid,
+        staffName: currentUser.displayName || currentUser.email,
+        createdAt: serverTimestamp(),
+      });
+
+      const productUpdate = { stock: increment(qty), updatedAt: serverTimestamp() };
+      if (cost) productUpdate.costPrice = cost;
+      await updateDoc(doc(db, 'products', restockTargetId), productUpdate);
+
+      await logActivity(currentUser, 'product_restocked', { id: restockTargetId, name: p.name, qty });
+      showToast(`Restocked +${qty} units of ${p.name}`);
+      document.getElementById('restock-modal').classList.remove('modal--open');
+      await loadProducts();
+    } catch (err) { showToast('Restock failed: ' + err.message, 'error'); }
+  });
+
+  // ── Stock History ──────────────────────────────────────────────────────────
+  window.viewHistory = async id => {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('history-modal-title').textContent = `Stock History — ${p.name}`;
+    document.getElementById('history-modal').classList.add('modal--open');
+    document.getElementById('history-body').innerHTML = '<tr><td colspan="10" class="text-center text-muted">Loading…</td></tr>';
+
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'stockMovements'),
+        where('productId', '==', id),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      ));
+      const moves = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      if (!moves.length) {
+        document.getElementById('history-body').innerHTML = '<tr><td colspan="10" class="text-center text-muted">No stock movements recorded yet</td></tr>';
+        return;
+      }
+
+      const typeBadge = { restock:'badge--green', sale:'badge--blue', return:'badge--yellow', adjustment:'badge--grey' };
+      document.getElementById('history-body').innerHTML = moves.map(m => `
+        <tr>
+          <td class="text-sm text-muted" style="white-space:nowrap">${formatDateShort(m.createdAt)}</td>
+          <td><span class="badge ${typeBadge[m.type] || 'badge--grey'}">${m.type}</span></td>
+          <td class="text-sm" style="font-weight:700;color:${m.quantityChanged >= 0 ? '#16a34a' : '#dc2626'}">${m.quantityChanged >= 0 ? '+' : ''}${m.quantityChanged}</td>
+          <td class="text-sm">${m.quantityBefore}</td>
+          <td class="text-sm">${m.quantityAfter}</td>
+          <td class="text-sm">${m.reason || '—'}</td>
+          <td class="text-sm">${m.supplier || '—'}</td>
+          <td class="text-sm">${m.costPrice != null ? '₱' + Number(m.costPrice).toFixed(2) : '—'}</td>
+          <td class="text-sm">${m.staffName || '—'}</td>
+          <td class="text-sm text-muted">${m.notes || '—'}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      document.getElementById('history-body').innerHTML = `<tr><td colspan="10" class="text-center text-muted">Error: ${err.message}</td></tr>`;
+    }
+  };
+
+  document.getElementById('close-history-modal').addEventListener('click', () => document.getElementById('history-modal').classList.remove('modal--open'));
+  document.getElementById('close-history-footer').addEventListener('click', () => document.getElementById('history-modal').classList.remove('modal--open'));
 </script>
 </body>
 </html>
