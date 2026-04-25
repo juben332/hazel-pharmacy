@@ -476,7 +476,7 @@
     const change = tendered - total;
     const el = document.getElementById('change-due');
     el.textContent = formatPeso(Math.max(0, change));
-    el.classList.toggle('pos-change--negative', change < 0 && paymentMethod === 'cash');
+    el.classList.toggle('pos-change--negative', change < 0);
   }
 
   document.getElementById('cash-tendered').addEventListener('input', () => {
