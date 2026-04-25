@@ -72,7 +72,10 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
     <h2 class="topbar__title">Inventory</h2>
-    <button class="btn btn--primary" id="add-product-btn">+ Add Product</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn--outline" id="deleted-history-btn">🗑 Deleted History</button>
+      <button class="btn btn--primary" id="add-product-btn">+ Add Product</button>
+    </div>
   </header>
 
   <div class="page-body">
@@ -293,6 +296,40 @@
   </div>
 </div>
 
+<!-- Deleted Products History Modal -->
+<div class="modal" id="deleted-history-modal">
+  <div class="modal__overlay"></div>
+  <div class="modal__box" style="max-width:960px;width:95vw">
+    <div class="modal__header">
+      <h3>Deleted Products History</h3>
+      <button class="modal__close" id="close-deleted-history">✕</button>
+    </div>
+    <div class="modal__body" style="padding:0">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Deleted At</th>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>Drug Type</th>
+              <th>Price</th>
+              <th>Stock at Deletion</th>
+              <th>Supplier</th>
+              <th>Expiry</th>
+              <th>Deleted By</th>
+            </tr>
+          </thead>
+          <tbody id="deleted-history-body"><tr><td colspan="9" class="text-center text-muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="close-deleted-history-footer">Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container" class="toast-container"></div>
 
 <script type="module">
@@ -492,13 +529,59 @@
   document.getElementById('cancel-delete').addEventListener('click', () => document.getElementById('delete-modal').classList.remove('modal--open'));
   document.getElementById('confirm-delete').addEventListener('click', async () => {
     try {
+      const p = products.find(x => x.id === deleteTargetId);
+      // Save full snapshot to deletedProducts before removing
+      if (p) {
+        const { id: _id, ...snapshot } = p;
+        await addDoc(collection(db, 'deletedProducts'), {
+          ...snapshot,
+          originalId:    deleteTargetId,
+          deletedAt:     serverTimestamp(),
+          deletedById:   currentUser.uid,
+          deletedByName: currentUser.displayName || currentUser.email,
+        });
+      }
       await deleteDoc(doc(db, 'products', deleteTargetId));
-      await logActivity(currentUser, 'product_deleted', { id: deleteTargetId });
+      await logActivity(currentUser, 'product_deleted', { id: deleteTargetId, name: p?.name });
       showToast('Product deleted');
       document.getElementById('delete-modal').classList.remove('modal--open');
       await loadProducts();
     } catch (err) { showToast('Delete failed: ' + err.message, 'error'); }
   });
+
+  // ── Deleted Products History ───────────────────────────────────────────────
+  document.getElementById('deleted-history-btn').addEventListener('click', async () => {
+    document.getElementById('deleted-history-modal').classList.add('modal--open');
+    document.getElementById('deleted-history-body').innerHTML = '<tr><td colspan="9" class="text-center text-muted">Loading…</td></tr>';
+    try {
+      const snap = await getDocs(query(collection(db, 'deletedProducts'), orderBy('deletedAt', 'desc'), limit(200)));
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (!items.length) {
+        document.getElementById('deleted-history-body').innerHTML = '<tr><td colspan="9" class="text-center text-muted">No deleted products on record</td></tr>';
+        return;
+      }
+      document.getElementById('deleted-history-body').innerHTML = items.map(p => {
+        const ts  = p.deletedAt?.toDate ? p.deletedAt.toDate() : new Date((p.deletedAt?.seconds || 0) * 1000);
+        const dateStr = ts.toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
+        const timeStr = ts.toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit' });
+        return `<tr>
+          <td class="text-sm text-muted" style="white-space:nowrap">${dateStr}<br/><small>${timeStr}</small></td>
+          <td><strong>${p.name || '—'}</strong>${p.description ? `<br/><small class="text-muted">${p.description}</small>` : ''}</td>
+          <td class="text-sm">${p.category || '—'}</td>
+          <td class="text-sm">${p.drugType ? `<span class="badge ${p.drugType === 'Generic' ? 'badge--green' : p.drugType === 'Branded' ? 'badge--blue' : 'badge--yellow'}">${p.drugType}</span>` : '—'}</td>
+          <td class="text-sm">₱${Number(p.price || 0).toFixed(2)}</td>
+          <td class="text-sm">${p.stock ?? '—'}</td>
+          <td class="text-sm">${p.supplier || '—'}</td>
+          <td class="text-sm">${p.expiryDate || '—'}</td>
+          <td class="text-sm">${p.deletedByName || '—'}</td>
+        </tr>`;
+      }).join('');
+    } catch (err) {
+      document.getElementById('deleted-history-body').innerHTML = `<tr><td colspan="9" class="text-center text-muted">Error: ${err.message}</td></tr>`;
+    }
+  });
+  document.getElementById('close-deleted-history').addEventListener('click', () => document.getElementById('deleted-history-modal').classList.remove('modal--open'));
+  document.getElementById('close-deleted-history-footer').addEventListener('click', () => document.getElementById('deleted-history-modal').classList.remove('modal--open'));
 
   // ── Restock ────────────────────────────────────────────────────────────────
   window.restockProduct = id => {

@@ -62,5 +62,11 @@ service cloud.firestore {
       allow read, create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
+
+    // Deleted Products — admin full access
+    match /deletedProducts/{id} {
+      allow read, create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
   }
 }
