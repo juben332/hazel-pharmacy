@@ -168,7 +168,10 @@
       <div class="card">
         <div class="card__header">
           <h3 id="product-report-title">Product Sales Report</h3>
-          <button class="btn btn--outline btn--sm" id="export-product-csv-btn">Export Excel</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn--outline btn--sm" id="export-product-plain-csv-btn">Export CSV</button>
+            <button class="btn btn--outline btn--sm" id="export-product-csv-btn">Export Excel</button>
+          </div>
         </div>
         <div class="card__body table-responsive">
           <table class="table" id="product-report-table">
@@ -771,6 +774,54 @@
       renderProductReport();
       showToast('Product updated');
     } catch (err) { showToast('Failed: ' + err.message, 'error'); }
+  });
+
+  document.getElementById('export-product-plain-csv-btn').addEventListener('click', () => {
+    if (!allTxns.length) { showToast('No transaction data to export', 'warning'); return; }
+
+    const productMap = {};
+    allProducts.forEach(p => { productMap[p.id] = p; });
+
+    const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [['DATE','ITEM','QTY','SRP','DISCOUNT','TOTAL SRP','TOTAL PROFIT','SUPPLIER PRICE','TOTAL LOSS','SUPPLIER NAME','STATUS','DRUG TYPE','CATEGORY']];
+
+    allTxns.slice().reverse().forEach(t => {
+      const txDate       = (t.createdAt?.toDate?.() || new Date(t.createdAt)).toLocaleDateString('en-PH');
+      const discountRate = (t.subtotal || 0) > 0 ? (t.discountAmount || 0) / t.subtotal : 0;
+      (t.items || []).forEach(item => {
+        const prod        = productMap[item.id] || {};
+        const srp         = item.price || 0;
+        const qty         = item.qty   || 0;
+        const itemSub     = srp * qty;
+        const discount    = parseFloat((itemSub * discountRate).toFixed(2));
+        const totalSrp    = parseFloat((itemSub - discount).toFixed(2));
+        const cost        = prod.costPrice || 0;
+        const totalProfit = parseFloat(((srp - cost) * qty - discount).toFixed(2));
+        rows.push([txDate, item.name || '', qty, srp, discount, totalSrp, totalProfit, cost, '', prod.supplier || '', 'Sold', prod.drugType || 'Unclassified', (prod.category || 'Uncategorized').trim()]);
+      });
+    });
+
+    // Include expired/damaged returns
+    allReturns.forEach(ret => {
+      const reason = ret.reason || '';
+      const r = reason.toLowerCase();
+      const st = r.includes('expired') ? 'Expired' : (r.includes('defective') || r.includes('damaged')) ? 'Damaged' : null;
+      if (!st) return;
+      const retDate = (ret.createdAt?.toDate?.() || new Date(ret.createdAt)).toLocaleDateString('en-PH');
+      (ret.items || []).forEach(item => {
+        const prod = productMap[item.id] || {};
+        const cost = prod.costPrice || 0;
+        const qty  = item.qty || 0;
+        rows.push([retDate, item.name || '', qty, item.price || 0, 0, 0, 0, cost, parseFloat((qty * cost).toFixed(2)), prod.supplier || '', st, prod.drugType || 'Unclassified', (prod.category || 'Uncategorized').trim()]);
+      });
+    });
+
+    const csv = rows.map(r => r.map(q).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ktake-rapha-product-sales-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
   });
 
   document.getElementById('export-product-csv-btn').addEventListener('click', () => {
