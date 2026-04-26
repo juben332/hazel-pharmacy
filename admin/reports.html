@@ -776,12 +776,24 @@
   document.getElementById('export-product-csv-btn').addEventListener('click', () => {
     if (!allTxns.length) { showToast('No transaction data to export', 'warning'); return; }
 
-    // Build product lookup maps
+    const NCOLS = 11; // A–K
+    const cols  = ['A','B','C','D','E','F','G','H','I','J','K'];
+
+    // Build product lookup map
     const productMap = {};
     allProducts.forEach(p => { productMap[p.id] = p; });
 
-    // Flatten transactions → one row per item, tagged with drugType + category
-    const itemRows = [];
+    // Helper: classify return reason into status label
+    const returnStatus = reason => {
+      if (!reason) return null;
+      const r = reason.toLowerCase();
+      if (r.includes('expired')) return 'Expired';
+      if (r.includes('defective') || r.includes('damaged')) return 'Damaged';
+      return null;
+    };
+
+    // Flatten sold items from transactions
+    const allRows = [];
     allTxns.slice().reverse().forEach(t => {
       const txDate       = (t.createdAt?.toDate?.() || new Date(t.createdAt)).toLocaleDateString('en-PH');
       const discountRate = (t.subtotal || 0) > 0 ? (t.discountAmount || 0) / t.subtotal : 0;
@@ -794,124 +806,170 @@
         const totalSrp    = parseFloat((itemSub - discount).toFixed(2));
         const cost        = prod.costPrice || 0;
         const totalProfit = parseFloat(((srp - cost) * qty - discount).toFixed(2));
-        itemRows.push({
-          txDate, name: item.name || '', qty, srp, discount, totalSrp, totalProfit,
+        allRows.push({
+          txDate, name: item.name || '', qty, srp, discount,
+          totalSrp, totalProfit,
+          supplierPrice: cost,
+          totalLoss:     0,
+          supplierName:  prod.supplier || '',
+          status:        'Sold',
           drugType: prod.drugType || 'Unclassified',
           category: (prod.category || 'Uncategorized').trim(),
         });
       });
     });
 
-    // Group by drugType → category (same order as on-screen table)
+    // Add expired/damaged return rows
+    allReturns.forEach(ret => {
+      const st = returnStatus(ret.reason);
+      if (!st) return;
+      const retDate = (ret.createdAt?.toDate?.() || new Date(ret.createdAt)).toLocaleDateString('en-PH');
+      (ret.items || []).forEach(item => {
+        const prod = productMap[item.id] || {};
+        const cost = prod.costPrice || 0;
+        const qty  = item.qty || 0;
+        allRows.push({
+          txDate: retDate, name: item.name || '', qty,
+          srp: item.price || 0, discount: 0,
+          totalSrp: 0, totalProfit: 0,
+          supplierPrice: cost,
+          totalLoss:     parseFloat((qty * cost).toFixed(2)),
+          supplierName:  prod.supplier || '',
+          status:        st,
+          drugType: prod.drugType || 'Unclassified',
+          category: (prod.category || 'Uncategorized').trim(),
+        });
+      });
+    });
+
+    // Group by drugType → category
     const dtGroups = {};
-    itemRows.forEach(r => {
+    allRows.forEach(r => {
       if (!dtGroups[r.drugType]) dtGroups[r.drugType] = {};
       if (!dtGroups[r.drugType][r.category]) dtGroups[r.drugType][r.category] = [];
       dtGroups[r.drugType][r.category].push(r);
     });
     const sortedDts = [...DT_ORDER.filter(d => dtGroups[d]), ...Object.keys(dtGroups).filter(d => !DT_ORDER.includes(d))];
 
-    // Text color and light-tinted background matching the on-screen table
     const DT_XL = {
-      Generic:      { text: '16A34A', bg: 'DCFCE7', border: '16A34A' },
-      Branded:      { text: '1D4ED8', bg: 'DBEAFE', border: '1D4ED8' },
-      Galenical:    { text: 'D97706', bg: 'FEF3C7', border: 'D97706' },
-      Unclassified: { text: '475569', bg: 'F1F5F9', border: '475569' },
+      Generic:      { text: '16A34A', bg: 'DCFCE7' },
+      Branded:      { text: '1D4ED8', bg: 'DBEAFE' },
+      Galenical:    { text: 'D97706', bg: 'FEF3C7' },
+      Unclassified: { text: '475569', bg: 'F1F5F9' },
     };
 
-    const wb      = XLSX.utils.book_new();
-    const wsData  = [];
-    const dtRowIdxs  = [];
-    const catRowIdxs = [];
-    const dtRowTypes = []; // parallel array: which DT each dtRowIdx belongs to
+    const STATUS_COLORS = { Sold: '16A34A', Expired: 'DC2626', Damaged: 'D97706' };
 
-    wsData.push(['K-take Rapha Pharmacy — ' + currentPeriodLabel, '', '', '', '', '', '']);
-    wsData.push(['', '', '', '', '', '', '']);
-    wsData.push(['DATE', 'ITEM', 'QTY', 'SRP', 'DISCOUNT', 'TOTAL SRP', 'TOTAL PROFIT']);
+    const wb         = XLSX.utils.book_new();
+    const wsData     = [];
+    const dtRowIdxs  = [];
+    const dtRowTypes = [];
+    const catRowIdxs = [];
+    const dataRowIdxs = []; // track data rows for status coloring
+
+    const empty = Array(NCOLS).fill('');
+    wsData.push(['K-take Rapha Pharmacy — ' + currentPeriodLabel, ...Array(NCOLS - 1).fill('')]);
+    wsData.push([...empty]);
+    wsData.push(['DATE','ITEM','QTY','SRP','DISCOUNT','TOTAL SRP','TOTAL PROFIT','SUPPLIER PRICE','TOTAL LOSS','SUPPLIER NAME','STATUS']);
 
     sortedDts.forEach((dt, di) => {
-      if (di > 0) wsData.push(['', '', '', '', '', '', '']);
+      if (di > 0) wsData.push([...empty]);
       dtRowIdxs.push(wsData.length);
       dtRowTypes.push(dt);
-      wsData.push(['► ' + dt.toUpperCase(), '', '', '', '', '', '']);
+      wsData.push(['► ' + dt.toUpperCase(), ...Array(NCOLS - 1).fill('')]);
 
       Object.keys(dtGroups[dt]).sort().forEach(cat => {
         catRowIdxs.push(wsData.length);
-        wsData.push([cat.toUpperCase(), '', '', '', '', '', '']);
+        wsData.push([cat.toUpperCase(), ...Array(NCOLS - 1).fill('')]);
         dtGroups[dt][cat].forEach(r => {
-          wsData.push([r.txDate, r.name, r.qty, r.srp, r.discount, r.totalSrp, r.totalProfit]);
+          dataRowIdxs.push({ ri: wsData.length, status: r.status });
+          wsData.push([r.txDate, r.name, r.qty, r.srp, r.discount, r.totalSrp, r.totalProfit, r.supplierPrice, r.totalLoss || '', r.supplierName, r.status]);
         });
       });
     });
 
-    const overallSrp    = parseFloat(itemRows.reduce((s, r) => s + r.totalSrp,    0).toFixed(2));
-    const overallProfit = parseFloat(itemRows.reduce((s, r) => s + r.totalProfit, 0).toFixed(2));
-    wsData.push(['', '', '', '', '', 'OVERALL TOTAL', 'OVERALL TOTAL']);
-    wsData.push(['', '', '', '', '', overallSrp, overallProfit]);
+    const overallSrp    = parseFloat(allRows.reduce((s, r) => s + r.totalSrp,    0).toFixed(2));
+    const overallProfit = parseFloat(allRows.reduce((s, r) => s + r.totalProfit, 0).toFixed(2));
+    const overallLoss   = parseFloat(allRows.reduce((s, r) => s + r.totalLoss,   0).toFixed(2));
+    wsData.push([...empty.slice(0,5), 'OVERALL TOTAL', 'OVERALL TOTAL', '', 'OVERALL LOSS', '', '']);
+    wsData.push([...empty.slice(0,5), overallSrp, overallProfit, '', overallLoss, '', '']);
 
     const ws     = XLSX.utils.aoa_to_sheet(wsData);
-    const cols   = ['A','B','C','D','E','F','G'];
     const merges = [];
 
-    ws['!cols'] = [{ wch:14 },{ wch:32 },{ wch:6 },{ wch:12 },{ wch:12 },{ wch:14 },{ wch:14 }];
+    ws['!cols'] = [
+      { wch:14 },{ wch:30 },{ wch:6 },{ wch:10 },{ wch:10 },
+      { wch:13 },{ wch:13 },{ wch:14 },{ wch:12 },{ wch:20 },{ wch:10 },
+    ];
 
-    // Merge title row A1:G1
-    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
+    // Title row merged A:K
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: NCOLS - 1 } });
     if (ws['A1']) ws['A1'].s = { font: { bold: true, sz: 13 } };
 
     // Column header row (row 3)
     cols.forEach(col => {
       const cell = ws[`${col}3`];
-      if (cell) cell.s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' }, patternType: 'solid' }, alignment: { horizontal: 'center' } };
+      if (cell) cell.s = {
+        font:      { bold: true, color: { rgb: '1D4ED8' } },
+        fill:      { fgColor: { rgb: 'DBEAFE' }, patternType: 'solid' },
+        alignment: { horizontal: 'center' },
+      };
     });
 
-    // Drug type rows — merged A:G, apply style only to anchor cell A
+    // Drug type rows — merged A:K
     dtRowIdxs.forEach((ri, i) => {
       const dt    = dtRowTypes[i];
       const theme = DT_XL[dt] || DT_XL.Unclassified;
       const xlRow = ri + 1;
-      merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: 6 } });
-      // Anchor cell gets the style + value
+      merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: NCOLS - 1 } });
       if (!ws[`A${xlRow}`]) ws[`A${xlRow}`] = { t: 's', v: '► ' + dt.toUpperCase() };
       ws[`A${xlRow}`].s = {
         font:      { bold: true, sz: 11, color: { rgb: theme.text } },
         fill:      { fgColor: { rgb: theme.bg }, patternType: 'solid' },
         alignment: { horizontal: 'left', indent: 1 },
       };
-      // Non-anchor cells — same fill so the row looks solid when not merged in older viewers
-      for (let c = 1; c <= 6; c++) {
+      for (let c = 1; c < NCOLS; c++) {
         const addr = cols[c] + xlRow;
         if (!ws[addr]) ws[addr] = { t: 's', v: '' };
         ws[addr].s = { fill: { fgColor: { rgb: theme.bg }, patternType: 'solid' } };
       }
     });
 
-    // Category rows — merged A:G, solid blue bg, white bold text
+    // Category rows — merged A:K
     catRowIdxs.forEach(ri => {
       const xlRow = ri + 1;
-      merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: 6 } });
+      merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: NCOLS - 1 } });
       if (!ws[`A${xlRow}`]) ws[`A${xlRow}`] = { t: 's', v: '' };
       ws[`A${xlRow}`].s = {
         font:      { bold: true, color: { rgb: 'FFFFFF' } },
         fill:      { fgColor: { rgb: '2563EB' }, patternType: 'solid' },
         alignment: { horizontal: 'left', indent: 2 },
       };
-      for (let c = 1; c <= 6; c++) {
+      for (let c = 1; c < NCOLS; c++) {
         const addr = cols[c] + xlRow;
         if (!ws[addr]) ws[addr] = { t: 's', v: '' };
         ws[addr].s = { fill: { fgColor: { rgb: '2563EB' }, patternType: 'solid' } };
       }
     });
 
+    // Color STATUS cell (column K) per row
+    dataRowIdxs.forEach(({ ri, status }) => {
+      const xlRow = ri + 1;
+      const addr  = `K${xlRow}`;
+      const color = STATUS_COLORS[status] || '475569';
+      if (!ws[addr]) ws[addr] = { t: 's', v: status };
+      ws[addr].s = { font: { bold: true, color: { rgb: color } }, alignment: { horizontal: 'center' } };
+    });
+
     ws['!merges'] = merges;
 
-    // OVERALL TOTAL rows
+    // OVERALL TOTAL / LOSS rows
     const labelRow = wsData.length - 1;
     const valueRow = wsData.length;
-    ['F','G'].forEach(col => {
+    [{ col:'F', label:'OVERALL TOTAL' }, { col:'G', label:'OVERALL TOTAL' }, { col:'I', label:'OVERALL LOSS' }].forEach(({ col, label }) => {
       const lAddr = `${col}${labelRow}`;
-      if (!ws[lAddr]) ws[lAddr] = { t: 's', v: '' };
-      ws[lAddr].s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' } }, alignment: { horizontal: 'center' } };
+      if (!ws[lAddr]) ws[lAddr] = { t: 's', v: label };
+      ws[lAddr].s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' }, patternType: 'solid' }, alignment: { horizontal: 'center' } };
       const vAddr = `${col}${valueRow}`;
       if (!ws[vAddr]) ws[vAddr] = { t: 'n', v: 0 };
       ws[vAddr].s = { font: { bold: true, sz: 11 }, alignment: { horizontal: 'right' } };
