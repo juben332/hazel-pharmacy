@@ -120,6 +120,16 @@
 
         <div class="pos-cart__totals">
           <div class="pos-totals-row"><span>Subtotal</span><span id="subtotal">₱0.00</span></div>
+          <div class="pos-totals-row">
+            <span>Discount</span>
+            <select id="discount-type" class="form-control form-control--sm" style="max-width:160px;font-size:0.8rem;padding:3px 6px;height:auto;">
+              <option value="none">None</option>
+              <option value="senior">Senior Citizen (20%)</option>
+              <option value="pwd">PWD (20%)</option>
+              <option value="employee">Employee (10%)</option>
+            </select>
+          </div>
+          <div class="pos-totals-row" id="discount-row" hidden><span>Discount Amount</span><span id="discount-amount" style="color:#dc2626;">-₱0.00</span></div>
           <div class="pos-totals-row pos-totals-row--total"><span>TOTAL</span><span id="grand-total">₱0.00</span></div>
         </div>
 
@@ -422,11 +432,27 @@
   });
 
   // ── Totals ─────────────────────────────────────────────────────────────────
+  function getDiscountRate() {
+    const type = document.getElementById('discount-type')?.value || 'none';
+    if (type === 'senior' || type === 'pwd') return 0.20;
+    if (type === 'employee') return 0.10;
+    return 0;
+  }
+
   function updateTotals() {
     const subtotal = cart.reduce((sum, x) => sum + x.price * x.qty, 0);
-    const total = subtotal;
+    const rate = getDiscountRate();
+    const discountAmt = subtotal * rate;
+    const total = subtotal - discountAmt;
 
     document.getElementById('subtotal').textContent = formatPeso(subtotal);
+    const discountRow = document.getElementById('discount-row');
+    if (discountAmt > 0) {
+      document.getElementById('discount-amount').textContent = `-${formatPeso(discountAmt)}`;
+      discountRow.hidden = false;
+    } else {
+      discountRow.hidden = true;
+    }
     document.getElementById('grand-total').textContent = formatPeso(total);
 
     const totalQty = cart.reduce((sum, x) => sum + x.qty, 0);
@@ -450,6 +476,10 @@
     updateChange(total);
   });
 
+  document.getElementById('discount-type').addEventListener('change', () => {
+    updateTotals();
+  });
+
   function setupQuickCash() {
     const amounts = [100, 200, 500, 1000];
     const el = document.getElementById('quick-cash');
@@ -471,6 +501,9 @@
     const tendered = parseFloat(document.getElementById('cash-tendered').value) || 0;
     if (tendered < total) { showToast('Insufficient cash tendered', 'error'); return; }
 
+    const discountType = document.getElementById('discount-type').value;
+    const discountAmount = subtotal - total;
+
     const btn = document.getElementById('checkout-btn');
     btn.disabled = true;
     btn.textContent = 'Processing…';
@@ -478,7 +511,7 @@
     try {
       const txData = {
         items: cart.map(x => ({ id: x.id, name: x.name, price: x.price, qty: x.qty })),
-        subtotal, discountType: 'none', discountAmount: 0, total,
+        subtotal, discountType, discountAmount, total,
         paymentMethod: 'cash',
         cashTendered: tendered,
         changeDue: Math.max(0, tendered - total),
@@ -500,6 +533,7 @@
 
       showReceipt({ id: txRef.id, ...txData });
       cart = [];
+      document.getElementById('discount-type').value = 'none';
       renderCart();
       await loadProducts();
     } catch (err) {
