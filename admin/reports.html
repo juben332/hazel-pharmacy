@@ -862,40 +862,45 @@
     // Column header row (row 3)
     cols.forEach(col => {
       const cell = ws[`${col}3`];
-      if (cell) cell.s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' } }, alignment: { horizontal: 'center' } };
+      if (cell) cell.s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' }, patternType: 'solid' }, alignment: { horizontal: 'center' } };
     });
 
-    // Drug type rows — merged A:G, light tinted bg + bold colored text
+    // Drug type rows — merged A:G, apply style only to anchor cell A
     dtRowIdxs.forEach((ri, i) => {
       const dt    = dtRowTypes[i];
       const theme = DT_XL[dt] || DT_XL.Unclassified;
       const xlRow = ri + 1;
-      const r0    = ri; // 0-based row index
-      merges.push({ s: { r: r0, c: 0 }, e: { r: r0, c: 6 } });
-      cols.forEach(col => {
-        const addr = `${col}${xlRow}`;
+      merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: 6 } });
+      // Anchor cell gets the style + value
+      if (!ws[`A${xlRow}`]) ws[`A${xlRow}`] = { t: 's', v: '► ' + dt.toUpperCase() };
+      ws[`A${xlRow}`].s = {
+        font:      { bold: true, sz: 11, color: { rgb: theme.text } },
+        fill:      { fgColor: { rgb: theme.bg }, patternType: 'solid' },
+        alignment: { horizontal: 'left', indent: 1 },
+      };
+      // Non-anchor cells — same fill so the row looks solid when not merged in older viewers
+      for (let c = 1; c <= 6; c++) {
+        const addr = cols[c] + xlRow;
         if (!ws[addr]) ws[addr] = { t: 's', v: '' };
-        ws[addr].s = {
-          font:      { bold: true, sz: 11, color: { rgb: theme.text } },
-          fill:      { fgColor: { rgb: theme.bg } },
-          alignment: { horizontal: 'left', indent: 1 },
-        };
-      });
+        ws[addr].s = { fill: { fgColor: { rgb: theme.bg }, patternType: 'solid' } };
+      }
     });
 
     // Category rows — merged A:G, solid blue bg, white bold text
     catRowIdxs.forEach(ri => {
       const xlRow = ri + 1;
       merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: 6 } });
-      cols.forEach(col => {
-        const addr = `${col}${xlRow}`;
+      if (!ws[`A${xlRow}`]) ws[`A${xlRow}`] = { t: 's', v: '' };
+      ws[`A${xlRow}`].s = {
+        font:      { bold: true, color: { rgb: 'FFFFFF' } },
+        fill:      { fgColor: { rgb: '2563EB' }, patternType: 'solid' },
+        alignment: { horizontal: 'left', indent: 2 },
+      };
+      for (let c = 1; c <= 6; c++) {
+        const addr = cols[c] + xlRow;
         if (!ws[addr]) ws[addr] = { t: 's', v: '' };
-        ws[addr].s = {
-          font:      { bold: true, color: { rgb: 'FFFFFF' } },
-          fill:      { fgColor: { rgb: '2563EB' } },
-          alignment: { horizontal: 'left', indent: 2 },
-        };
-      });
+        ws[addr].s = { fill: { fgColor: { rgb: '2563EB' }, patternType: 'solid' } };
+      }
     });
 
     ws['!merges'] = merges;
