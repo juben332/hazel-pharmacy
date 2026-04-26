@@ -811,12 +811,19 @@
     });
     const sortedDts = [...DT_ORDER.filter(d => dtGroups[d]), ...Object.keys(dtGroups).filter(d => !DT_ORDER.includes(d))];
 
-    const DT_XL_COLORS = { Generic:'1E7E34', Branded:'1D4ED8', Galenical:'B45309', Unclassified:'475569' };
+    // Text color and light-tinted background matching the on-screen table
+    const DT_XL = {
+      Generic:      { text: '16A34A', bg: 'DCFCE7', border: '16A34A' },
+      Branded:      { text: '1D4ED8', bg: 'DBEAFE', border: '1D4ED8' },
+      Galenical:    { text: 'D97706', bg: 'FEF3C7', border: 'D97706' },
+      Unclassified: { text: '475569', bg: 'F1F5F9', border: '475569' },
+    };
 
     const wb      = XLSX.utils.book_new();
     const wsData  = [];
     const dtRowIdxs  = [];
     const catRowIdxs = [];
+    const dtRowTypes = []; // parallel array: which DT each dtRowIdx belongs to
 
     wsData.push(['K-take Rapha Pharmacy — ' + currentPeriodLabel, '', '', '', '', '', '']);
     wsData.push(['', '', '', '', '', '', '']);
@@ -825,11 +832,12 @@
     sortedDts.forEach((dt, di) => {
       if (di > 0) wsData.push(['', '', '', '', '', '', '']);
       dtRowIdxs.push(wsData.length);
-      wsData.push([dt.toUpperCase(), '', '', '', '', '', '']);
+      dtRowTypes.push(dt);
+      wsData.push(['► ' + dt.toUpperCase(), '', '', '', '', '', '']);
 
       Object.keys(dtGroups[dt]).sort().forEach(cat => {
         catRowIdxs.push(wsData.length);
-        wsData.push(['  ' + cat.toUpperCase(), '', '', '', '', '', '']);
+        wsData.push([cat.toUpperCase(), '', '', '', '', '', '']);
         dtGroups[dt][cat].forEach(r => {
           wsData.push([r.txDate, r.name, r.qty, r.srp, r.discount, r.totalSrp, r.totalProfit]);
         });
@@ -847,7 +855,7 @@
     ws['!cols'] = [{ wch:14 },{ wch:32 },{ wch:6 },{ wch:12 },{ wch:12 },{ wch:14 },{ wch:14 }];
 
     // Title
-    if (ws['A1']) ws['A1'].s = { font: { bold: true, sz: 12 } };
+    if (ws['A1']) ws['A1'].s = { font: { bold: true, sz: 13 } };
 
     // Column header row (row 3)
     cols.forEach(col => {
@@ -855,18 +863,23 @@
       if (cell) cell.s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' } }, alignment: { horizontal: 'center' } };
     });
 
-    // Drug type rows — colored background
+    // Drug type rows — light tinted bg + bold colored text (matches on-screen UI)
     dtRowIdxs.forEach((ri, i) => {
-      const xlRgb = DT_XL_COLORS[sortedDts[i]] || '475569';
-      const xlRow = ri + 1;
+      const dt     = dtRowTypes[i];
+      const theme  = DT_XL[dt] || DT_XL.Unclassified;
+      const xlRow  = ri + 1;
       cols.forEach(col => {
         const addr = `${col}${xlRow}`;
         if (!ws[addr]) ws[addr] = { t: 's', v: '' };
-        ws[addr].s = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: xlRgb } } };
+        ws[addr].s = {
+          font:      { bold: true, sz: 11, color: { rgb: theme.text } },
+          fill:      { fgColor: { rgb: theme.bg } },
+          alignment: { horizontal: col === 'A' ? 'left' : 'center' },
+        };
       });
     });
 
-    // Category rows — blue background
+    // Category rows — solid blue bg, white bold text
     catRowIdxs.forEach(ri => {
       const xlRow = ri + 1;
       cols.forEach(col => {
