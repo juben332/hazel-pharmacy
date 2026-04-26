@@ -18,12 +18,9 @@ service cloud.firestore {
         (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'updatedAt']));
     }
 
-    // Transactions — cashier can create, admin reads all, cashier reads own
+    // Transactions — any signed-in user can read/create (staff need all for reports)
     match /transactions/{id} {
-      allow create: if isSignedIn();
-      allow read:   if isSignedIn() && (
-        isAdmin() || resource.data.cashierId == request.auth.uid
-      );
+      allow read, create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
