@@ -777,50 +777,110 @@
   });
 
   document.getElementById('export-product-plain-csv-btn').addEventListener('click', () => {
-    if (!allTxns.length) { showToast('No transaction data to export', 'warning'); return; }
+    if (!allProducts.length) { showToast('No product data to export', 'warning'); return; }
 
-    const productMap = {};
-    allProducts.forEach(p => { productMap[p.id] = p; });
+    const soldMap = buildSoldMap();
 
-    const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const rows = [['DATE','ITEM','QTY','SRP','DISCOUNT','TOTAL SRP','TOTAL PROFIT','SUPPLIER PRICE','TOTAL LOSS','SUPPLIER NAME','STATUS','DRUG TYPE','CATEGORY']];
+    // Same grouping as on-screen table
+    const dtGroups = {};
+    allProducts.forEach(p => {
+      const dt  = p.drugType || 'Unclassified';
+      const cat = (p.category || 'Uncategorized').trim();
+      if (!dtGroups[dt]) dtGroups[dt] = {};
+      if (!dtGroups[dt][cat]) dtGroups[dt][cat] = [];
+      dtGroups[dt][cat].push(p);
+    });
+    const sortedDts = [...DT_ORDER.filter(d => dtGroups[d]), ...Object.keys(dtGroups).filter(d => !DT_ORDER.includes(d))];
 
-    allTxns.slice().reverse().forEach(t => {
-      const txDate       = (t.createdAt?.toDate?.() || new Date(t.createdAt)).toLocaleDateString('en-PH');
-      const discountRate = (t.subtotal || 0) > 0 ? (t.discountAmount || 0) / t.subtotal : 0;
-      (t.items || []).forEach(item => {
-        const prod        = productMap[item.id] || {};
-        const srp         = item.price || 0;
-        const qty         = item.qty   || 0;
-        const itemSub     = srp * qty;
-        const discount    = parseFloat((itemSub * discountRate).toFixed(2));
-        const totalSrp    = parseFloat((itemSub - discount).toFixed(2));
-        const cost        = prod.costPrice || 0;
-        const totalProfit = parseFloat(((srp - cost) * qty - discount).toFixed(2));
-        rows.push([txDate, item.name || '', qty, srp, discount, totalSrp, totalProfit, cost, '', prod.supplier || '', 'Sold', prod.drugType || 'Unclassified', (prod.category || 'Uncategorized').trim()]);
+    const DT_STYLE = {
+      Generic:      { color: '#16A34A', bg: '#DCFCE7', border: '#16A34A' },
+      Branded:      { color: '#1D4ED8', bg: '#DBEAFE', border: '#1D4ED8' },
+      Galenical:    { color: '#D97706', bg: '#FEF3C7', border: '#D97706' },
+      Unclassified: { color: '#475569', bg: '#F1F5F9', border: '#475569' },
+    };
+
+    const NC = 8;
+    const HDR = 'font-weight:bold;color:#1D4ED8;background:#DBEAFE;text-align:right;padding:5px 8px;border:1px solid #93c5fd;';
+    const HDRL = 'font-weight:bold;color:#1D4ED8;background:#DBEAFE;text-align:left;padding:5px 8px;border:1px solid #93c5fd;';
+    const td  = (v, s='') => `<td style="padding:4px 8px;border:1px solid #e2e8f0;${s}">${v ?? ''}</td>`;
+    const tdr = (v, s='') => td(v, 'text-align:right;' + s);
+
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
+<x:ExcelWorksheet><x:Name>Product Sales</x:Name></x:ExcelWorksheet>
+</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head><body>
+<table border="0" style="border-collapse:collapse;font-family:Calibri;font-size:10pt">`;
+
+    html += `<tr><td colspan="${NC}" style="font-weight:bold;font-size:13pt;padding:6px 4px;border:none">K-take Rapha Pharmacy — ${currentPeriodLabel}</td></tr>`;
+    html += `<tr><td colspan="${NC}" style="border:none">&nbsp;</td></tr>`;
+    html += `<tr>
+      <td style="${HDRL}">PRODUCT</td>
+      <td style="${HDR}">STOCKS (BEGINNING)</td>
+      <td style="${HDR}">SOLD</td>
+      <td style="${HDR}">STOCKS (REMAINING)</td>
+      <td style="${HDR}">SRP (SELL)</td>
+      <td style="${HDR}">COST (BUY)</td>
+      <td style="${HDR}">TOTAL SALES</td>
+      <td style="${HDR}">PROFIT</td>
+    </tr>`;
+
+    let grandSales = 0, grandProfit = 0;
+
+    sortedDts.forEach((dt, di) => {
+      if (di > 0) html += `<tr><td colspan="${NC}" style="border:none">&nbsp;</td></tr>`;
+      const s = DT_STYLE[dt] || DT_STYLE.Unclassified;
+      html += `<tr><td colspan="${NC}" style="font-weight:bold;font-size:11pt;color:${s.color};background:${s.bg};padding:7px 10px;border:3px solid ${s.border}40;border-left:4px solid ${s.color}">► ${dt.toUpperCase()}</td></tr>`;
+
+      Object.keys(dtGroups[dt]).sort().forEach(cat => {
+        html += `<tr><td colspan="${NC}" style="font-weight:bold;color:#ffffff;background:#2563EB;padding:4px 16px;border:1px solid #1d4ed8">${cat.toUpperCase()}</td></tr>`;
+
+        dtGroups[dt][cat].sort((a, b) => (a.name || '').localeCompare(b.name || '')).forEach(p => {
+          const sold      = soldMap[p.id || p.name] || 0;
+          const remaining = p.stock ?? 0;
+          const beginning = remaining + sold;
+          const srp       = p.price || 0;
+          const cost      = p.costPrice || 0;
+          const totalSales   = parseFloat((sold * srp).toFixed(2));
+          const profit    = parseFloat((sold * (srp - cost)).toFixed(2));
+          grandSales  += totalSales;
+          grandProfit += profit;
+          const lowS = remaining <= (p.lowStockThreshold || 10) && remaining > 0 ? 'color:#b45309;font-weight:600;' : '';
+          html += `<tr>
+            ${td('&nbsp;&nbsp;&nbsp;&nbsp;' + (p.name || '—'))}
+            ${tdr(beginning)}
+            ${tdr(sold, sold > 0 ? 'color:#1d4ed8;font-weight:600;' : '')}
+            ${tdr(remaining, lowS)}
+            ${tdr('₱' + srp.toFixed(2))}
+            ${tdr('₱' + cost.toFixed(2))}
+            ${tdr('₱' + totalSales.toFixed(2), totalSales > 0 ? 'color:#16a34a;font-weight:600;' : '')}
+            ${tdr('₱' + profit.toFixed(2), profit > 0 ? 'color:#16a34a;font-weight:600;' : profit < 0 ? 'color:#dc2626;' : '')}
+          </tr>`;
+        });
       });
     });
 
-    // Include expired/damaged returns
-    allReturns.forEach(ret => {
-      const reason = ret.reason || '';
-      const r = reason.toLowerCase();
-      const st = r.includes('expired') ? 'Expired' : (r.includes('defective') || r.includes('damaged')) ? 'Damaged' : null;
-      if (!st) return;
-      const retDate = (ret.createdAt?.toDate?.() || new Date(ret.createdAt)).toLocaleDateString('en-PH');
-      (ret.items || []).forEach(item => {
-        const prod = productMap[item.id] || {};
-        const cost = prod.costPrice || 0;
-        const qty  = item.qty || 0;
-        rows.push([retDate, item.name || '', qty, item.price || 0, 0, 0, 0, cost, parseFloat((qty * cost).toFixed(2)), prod.supplier || '', st, prod.drugType || 'Unclassified', (prod.category || 'Uncategorized').trim()]);
-      });
-    });
+    const TOT = 'font-weight:bold;color:#1D4ED8;background:#DBEAFE;text-align:right;padding:5px 8px;border:1px solid #93c5fd;';
+    html += `<tr><td colspan="${NC}" style="border:none">&nbsp;</td></tr>`;
+    html += `<tr>
+      <td colspan="6" style="border:none"></td>
+      <td style="${TOT}">₱${grandSales.toFixed(2)}</td>
+      <td style="${TOT}">₱${grandProfit.toFixed(2)}</td>
+    </tr>
+    <tr>
+      <td colspan="6" style="font-weight:bold;color:#1D4ED8;padding:4px 8px;border:none">GRAND TOTAL</td>
+      <td style="${TOT.replace('border:1px','border:2px')}font-size:11pt;">TOTAL SALES</td>
+      <td style="${TOT.replace('border:1px','border:2px')}font-size:11pt;">TOTAL PROFIT</td>
+    </tr>`;
 
-    const csv = rows.map(r => r.map(q).join(',')).join('\n');
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    html += `</table></body></html>`;
+
+    const blob = new Blob(['﻿' + html], { type: 'application/vnd.ms-excel;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `ktake-rapha-product-sales-${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `ktake-rapha-product-report-${new Date().toISOString().slice(0,10)}.xls`;
     a.click();
   });
 
