@@ -776,39 +776,68 @@
   document.getElementById('export-product-csv-btn').addEventListener('click', () => {
     if (!allTxns.length) { showToast('No transaction data to export', 'warning'); return; }
 
-    // Build cost map from products
-    const costMap = {};
-    allProducts.forEach(p => { costMap[p.id] = p.costPrice || 0; });
+    // Build product lookup maps
+    const productMap = {};
+    allProducts.forEach(p => { productMap[p.id] = p; });
 
-    // Flatten: one row per item per transaction
-    const rows = [];
+    // Flatten transactions → one row per item, tagged with drugType + category
+    const itemRows = [];
     allTxns.slice().reverse().forEach(t => {
-      const txDate = (t.createdAt?.toDate?.() || new Date(t.createdAt)).toLocaleDateString('en-PH');
+      const txDate       = (t.createdAt?.toDate?.() || new Date(t.createdAt)).toLocaleDateString('en-PH');
       const discountRate = (t.subtotal || 0) > 0 ? (t.discountAmount || 0) / t.subtotal : 0;
       (t.items || []).forEach(item => {
-        const srp        = item.price || 0;
-        const qty        = item.qty   || 0;
-        const itemSub    = srp * qty;
-        const discount   = parseFloat((itemSub * discountRate).toFixed(2));
-        const totalSrp   = parseFloat((itemSub - discount).toFixed(2));
-        const cost       = costMap[item.id] || 0;
+        const prod        = productMap[item.id] || {};
+        const srp         = item.price || 0;
+        const qty         = item.qty   || 0;
+        const itemSub     = srp * qty;
+        const discount    = parseFloat((itemSub * discountRate).toFixed(2));
+        const totalSrp    = parseFloat((itemSub - discount).toFixed(2));
+        const cost        = prod.costPrice || 0;
         const totalProfit = parseFloat(((srp - cost) * qty - discount).toFixed(2));
-        rows.push({ txDate, name: item.name || '', qty, srp, discount, totalSrp, totalProfit });
+        itemRows.push({
+          txDate, name: item.name || '', qty, srp, discount, totalSrp, totalProfit,
+          drugType: prod.drugType || 'Unclassified',
+          category: (prod.category || 'Uncategorized').trim(),
+        });
       });
     });
 
-    const overallSrp    = rows.reduce((s, r) => s + r.totalSrp,    0);
-    const overallProfit = rows.reduce((s, r) => s + r.totalProfit, 0);
+    // Group by drugType → category (same order as on-screen table)
+    const dtGroups = {};
+    itemRows.forEach(r => {
+      if (!dtGroups[r.drugType]) dtGroups[r.drugType] = {};
+      if (!dtGroups[r.drugType][r.category]) dtGroups[r.drugType][r.category] = [];
+      dtGroups[r.drugType][r.category].push(r);
+    });
+    const sortedDts = [...DT_ORDER.filter(d => dtGroups[d]), ...Object.keys(dtGroups).filter(d => !DT_ORDER.includes(d))];
 
-    const wb     = XLSX.utils.book_new();
-    const wsData = [];
+    const DT_XL_COLORS = { Generic:'1E7E34', Branded:'1D4ED8', Galenical:'B45309', Unclassified:'475569' };
+
+    const wb      = XLSX.utils.book_new();
+    const wsData  = [];
+    const dtRowIdxs  = [];
+    const catRowIdxs = [];
 
     wsData.push(['K-take Rapha Pharmacy — ' + currentPeriodLabel, '', '', '', '', '', '']);
     wsData.push(['', '', '', '', '', '', '']);
     wsData.push(['DATE', 'ITEM', 'QTY', 'SRP', 'DISCOUNT', 'TOTAL SRP', 'TOTAL PROFIT']);
 
-    rows.forEach(r => wsData.push([r.txDate, r.name, r.qty, r.srp, r.discount, r.totalSrp, r.totalProfit]));
+    sortedDts.forEach((dt, di) => {
+      if (di > 0) wsData.push(['', '', '', '', '', '', '']);
+      dtRowIdxs.push(wsData.length);
+      wsData.push([dt.toUpperCase(), '', '', '', '', '', '']);
 
+      Object.keys(dtGroups[dt]).sort().forEach(cat => {
+        catRowIdxs.push(wsData.length);
+        wsData.push(['  ' + cat.toUpperCase(), '', '', '', '', '', '']);
+        dtGroups[dt][cat].forEach(r => {
+          wsData.push([r.txDate, r.name, r.qty, r.srp, r.discount, r.totalSrp, r.totalProfit]);
+        });
+      });
+    });
+
+    const overallSrp    = parseFloat(itemRows.reduce((s, r) => s + r.totalSrp,    0).toFixed(2));
+    const overallProfit = parseFloat(itemRows.reduce((s, r) => s + r.totalProfit, 0).toFixed(2));
     wsData.push(['', '', '', '', '', 'OVERALL TOTAL', 'OVERALL TOTAL']);
     wsData.push(['', '', '', '', '', overallSrp, overallProfit]);
 
@@ -817,33 +846,46 @@
 
     ws['!cols'] = [{ wch:14 },{ wch:32 },{ wch:6 },{ wch:12 },{ wch:12 },{ wch:14 },{ wch:14 }];
 
-    // Title row
+    // Title
     if (ws['A1']) ws['A1'].s = { font: { bold: true, sz: 12 } };
 
-    // Header row (row 3)
+    // Column header row (row 3)
     cols.forEach(col => {
       const cell = ws[`${col}3`];
-      if (cell) cell.s = {
-        font:      { bold: true, color: { rgb: '1D4ED8' } },
-        fill:      { fgColor: { rgb: 'DBEAFE' } },
-        alignment: { horizontal: 'center' },
-      };
+      if (cell) cell.s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' } }, alignment: { horizontal: 'center' } };
     });
 
-    // OVERALL TOTAL label row
-    const labelRow = wsData.length - 1; // second-to-last
-    ['F','G'].forEach(col => {
-      const addr = `${col}${labelRow}`;
-      if (!ws[addr]) ws[addr] = { t: 's', v: '' };
-      ws[addr].s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' } }, alignment: { horizontal: 'center' } };
+    // Drug type rows — colored background
+    dtRowIdxs.forEach((ri, i) => {
+      const xlRgb = DT_XL_COLORS[sortedDts[i]] || '475569';
+      const xlRow = ri + 1;
+      cols.forEach(col => {
+        const addr = `${col}${xlRow}`;
+        if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+        ws[addr].s = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: xlRgb } } };
+      });
     });
 
-    // OVERALL TOTAL value row
+    // Category rows — blue background
+    catRowIdxs.forEach(ri => {
+      const xlRow = ri + 1;
+      cols.forEach(col => {
+        const addr = `${col}${xlRow}`;
+        if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+        ws[addr].s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '2563EB' } } };
+      });
+    });
+
+    // OVERALL TOTAL rows
+    const labelRow = wsData.length - 1;
     const valueRow = wsData.length;
     ['F','G'].forEach(col => {
-      const addr = `${col}${valueRow}`;
-      if (!ws[addr]) ws[addr] = { t: 's', v: '' };
-      ws[addr].s = { font: { bold: true, sz: 11 }, alignment: { horizontal: 'right' } };
+      const lAddr = `${col}${labelRow}`;
+      if (!ws[lAddr]) ws[lAddr] = { t: 's', v: '' };
+      ws[lAddr].s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' } }, alignment: { horizontal: 'center' } };
+      const vAddr = `${col}${valueRow}`;
+      if (!ws[vAddr]) ws[vAddr] = { t: 'n', v: 0 };
+      ws[vAddr].s = { font: { bold: true, sz: 11 }, alignment: { horizontal: 'right' } };
     });
 
     XLSX.utils.book_append_sheet(wb, ws, 'Product Sales');
