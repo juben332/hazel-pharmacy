@@ -849,12 +849,14 @@
     wsData.push(['', '', '', '', '', 'OVERALL TOTAL', 'OVERALL TOTAL']);
     wsData.push(['', '', '', '', '', overallSrp, overallProfit]);
 
-    const ws   = XLSX.utils.aoa_to_sheet(wsData);
-    const cols = ['A','B','C','D','E','F','G'];
+    const ws     = XLSX.utils.aoa_to_sheet(wsData);
+    const cols   = ['A','B','C','D','E','F','G'];
+    const merges = [];
 
     ws['!cols'] = [{ wch:14 },{ wch:32 },{ wch:6 },{ wch:12 },{ wch:12 },{ wch:14 },{ wch:14 }];
 
-    // Title
+    // Merge title row A1:G1
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
     if (ws['A1']) ws['A1'].s = { font: { bold: true, sz: 13 } };
 
     // Column header row (row 3)
@@ -863,31 +865,40 @@
       if (cell) cell.s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' } }, alignment: { horizontal: 'center' } };
     });
 
-    // Drug type rows — light tinted bg + bold colored text (matches on-screen UI)
+    // Drug type rows — merged A:G, light tinted bg + bold colored text
     dtRowIdxs.forEach((ri, i) => {
-      const dt     = dtRowTypes[i];
-      const theme  = DT_XL[dt] || DT_XL.Unclassified;
-      const xlRow  = ri + 1;
+      const dt    = dtRowTypes[i];
+      const theme = DT_XL[dt] || DT_XL.Unclassified;
+      const xlRow = ri + 1;
+      const r0    = ri; // 0-based row index
+      merges.push({ s: { r: r0, c: 0 }, e: { r: r0, c: 6 } });
       cols.forEach(col => {
         const addr = `${col}${xlRow}`;
         if (!ws[addr]) ws[addr] = { t: 's', v: '' };
         ws[addr].s = {
           font:      { bold: true, sz: 11, color: { rgb: theme.text } },
           fill:      { fgColor: { rgb: theme.bg } },
-          alignment: { horizontal: col === 'A' ? 'left' : 'center' },
+          alignment: { horizontal: 'left', indent: 1 },
         };
       });
     });
 
-    // Category rows — solid blue bg, white bold text
+    // Category rows — merged A:G, solid blue bg, white bold text
     catRowIdxs.forEach(ri => {
       const xlRow = ri + 1;
+      merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: 6 } });
       cols.forEach(col => {
         const addr = `${col}${xlRow}`;
         if (!ws[addr]) ws[addr] = { t: 's', v: '' };
-        ws[addr].s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '2563EB' } } };
+        ws[addr].s = {
+          font:      { bold: true, color: { rgb: 'FFFFFF' } },
+          fill:      { fgColor: { rgb: '2563EB' } },
+          alignment: { horizontal: 'left', indent: 2 },
+        };
       });
     });
+
+    ws['!merges'] = merges;
 
     // OVERALL TOTAL rows
     const labelRow = wsData.length - 1;
