@@ -851,14 +851,15 @@
     });
     const sortedDts = [...DT_ORDER.filter(d => dtGroups[d]), ...Object.keys(dtGroups).filter(d => !DT_ORDER.includes(d))];
 
+    // SheetJS requires 8-char ARGB (FF + hex)
     const DT_XL = {
-      Generic:      { text: '16A34A', bg: 'DCFCE7' },
-      Branded:      { text: '1D4ED8', bg: 'DBEAFE' },
-      Galenical:    { text: 'D97706', bg: 'FEF3C7' },
-      Unclassified: { text: '475569', bg: 'F1F5F9' },
+      Generic:      { text: 'FF16A34A', bg: 'FFDCFCE7' },
+      Branded:      { text: 'FF1D4ED8', bg: 'FFDBEAFE' },
+      Galenical:    { text: 'FFD97706', bg: 'FFFEF3C7' },
+      Unclassified: { text: 'FF475569', bg: 'FFF1F5F9' },
     };
 
-    const STATUS_COLORS = { Sold: '16A34A', Expired: 'DC2626', Damaged: 'D97706' };
+    const STATUS_COLORS = { Sold: 'FF16A34A', Expired: 'FFDC2626', Damaged: 'FFD97706' };
 
     const wb         = XLSX.utils.book_new();
     const wsData     = [];
@@ -910,8 +911,8 @@
     cols.forEach(col => {
       const cell = ws[`${col}3`];
       if (cell) cell.s = {
-        font:      { bold: true, color: { rgb: '1D4ED8' } },
-        fill:      { fgColor: { rgb: 'DBEAFE' }, patternType: 'solid' },
+        font:      { bold: true, color: { rgb: 'FF1D4ED8' } },
+        fill:      { fgColor: { rgb: 'FFDBEAFE' }, patternType: 'solid' },
         alignment: { horizontal: 'center' },
       };
     });
@@ -941,14 +942,14 @@
       merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: NCOLS - 1 } });
       if (!ws[`A${xlRow}`]) ws[`A${xlRow}`] = { t: 's', v: '' };
       ws[`A${xlRow}`].s = {
-        font:      { bold: true, color: { rgb: 'FFFFFF' } },
-        fill:      { fgColor: { rgb: '2563EB' }, patternType: 'solid' },
+        font:      { bold: true, color: { rgb: 'FFFFFFFF' } },
+        fill:      { fgColor: { rgb: 'FF2563EB' }, patternType: 'solid' },
         alignment: { horizontal: 'left', indent: 2 },
       };
       for (let c = 1; c < NCOLS; c++) {
         const addr = cols[c] + xlRow;
         if (!ws[addr]) ws[addr] = { t: 's', v: '' };
-        ws[addr].s = { fill: { fgColor: { rgb: '2563EB' }, patternType: 'solid' } };
+        ws[addr].s = { fill: { fgColor: { rgb: 'FF2563EB' }, patternType: 'solid' } };
       }
     });
 
@@ -958,7 +959,7 @@
       const addr  = `K${xlRow}`;
       const color = STATUS_COLORS[status] || '475569';
       if (!ws[addr]) ws[addr] = { t: 's', v: status };
-      ws[addr].s = { font: { bold: true, color: { rgb: color } }, alignment: { horizontal: 'center' } };
+      ws[addr].s = { font: { bold: true, color: { rgb: color }, sz: 10 }, alignment: { horizontal: 'center' } };
     });
 
     ws['!merges'] = merges;
@@ -969,7 +970,7 @@
     [{ col:'F', label:'OVERALL TOTAL' }, { col:'G', label:'OVERALL TOTAL' }, { col:'I', label:'OVERALL LOSS' }].forEach(({ col, label }) => {
       const lAddr = `${col}${labelRow}`;
       if (!ws[lAddr]) ws[lAddr] = { t: 's', v: label };
-      ws[lAddr].s = { font: { bold: true, color: { rgb: '1D4ED8' } }, fill: { fgColor: { rgb: 'DBEAFE' }, patternType: 'solid' }, alignment: { horizontal: 'center' } };
+      ws[lAddr].s = { font: { bold: true, color: { rgb: 'FF1D4ED8' } }, fill: { fgColor: { rgb: 'FFDBEAFE' }, patternType: 'solid' }, alignment: { horizontal: 'center' } };
       const vAddr = `${col}${valueRow}`;
       if (!ws[vAddr]) ws[vAddr] = { t: 'n', v: 0 };
       ws[vAddr].s = { font: { bold: true, sz: 11 }, alignment: { horizontal: 'right' } };
