@@ -912,18 +912,25 @@ tbody tr:hover { background: #f8fafc; }
   .pos-category-tabs::-webkit-scrollbar { display: none; }
   .pos-cat-tab { flex-shrink: 0; scroll-snap-align: start; padding: 5px 12px; font-size: 0.75rem; }
 
-  /* Product grid: 2-column compact */
+  /* Product grid: 2-column, equal-height rows */
   .pos-product-grid {
     grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 1fr;
     gap: 6px; padding: 8px;
-    padding-bottom: 86px; /* room for FAB */
+    padding-bottom: 86px;
+    align-items: stretch;
   }
-  .pos-product-card { padding: 7px 8px 6px; min-height: 0; border-radius: 10px; }
+  .pos-product-card {
+    padding: 8px 8px 10px;
+    border-radius: 10px;
+    min-height: 0;
+    height: 100%;
+  }
   .pos-product-card__header { margin-bottom: 2px; gap: 4px; }
   .pos-product-card__name { font-size: 0.72rem; -webkit-line-clamp: 2; line-height: 1.25; }
   .pos-product-card__badge { min-width: 18px; height: 18px; font-size: 0.62rem; }
   .pos-product-card__cat  { font-size: 0.58rem; margin-bottom: 4px; }
-  .pos-product-card__footer { flex-direction: row; align-items: center; justify-content: space-between; gap: 3px; padding-top: 4px; }
+  .pos-product-card__footer { flex-direction: row; align-items: center; justify-content: space-between; gap: 3px; padding-top: 5px; }
   .pos-product-card__price { font-size: 0.82rem; }
   .pos-product-card__stock { font-size: 0.56rem; text-align: right; white-space: nowrap; }
 
