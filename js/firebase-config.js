@@ -15,6 +15,6 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db   = getFirestore(app);
 
-export const ADMIN_EMAIL = 'admin@gmail.com';
+export const ADMIN_EMAIL = 'wardopon123@gmail.com';
 export const isAdmin    = (user) => user?.email === ADMIN_EMAIL;
 export const isCashier  = (user) => user && !isAdmin(user);
